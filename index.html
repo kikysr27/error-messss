@@ -33,6 +33,7 @@ td{padding:9px 8px;border-bottom:1px solid var(--bd);vertical-align:top}
 .th{display:flex;gap:10px;flex-wrap:wrap}.th>div{width:170px;border:1px solid var(--bd);border-radius:8px;padding:6px;position:relative}
 .th img{width:100%;height:110px;object-fit:cover;border-radius:5px}.th .x{position:absolute;top:2px;right:2px;background:var(--red);color:#fff;border:0;border-radius:50%;width:22px;height:22px;cursor:pointer}
 .pf{position:relative;border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:12px;max-width:600px;background:#fff}.pf b{display:block;margin-bottom:6px;color:var(--nav)}.pf img{width:100%;max-height:380px;object-fit:contain;background:var(--bg);border-radius:6px;display:block}.pf label{margin-top:8px}.pf .x{position:absolute;top:8px;right:8px;background:var(--red);color:#fff;border:0;border-radius:50%;width:26px;height:26px;cursor:pointer;z-index:2}
+#toasts{position:fixed;left:18px;bottom:18px;display:flex;flex-direction:column;gap:8px;z-index:98}.tt{position:relative;overflow:hidden;background:#1b2433;color:#fff;border-radius:9px;padding:12px 14px 15px;display:flex;gap:14px;align-items:center;box-shadow:0 6px 18px rgba(0,0,0,.3);max-width:440px}.tt button{background:none;border:0;color:#60a5fa;font-weight:800;cursor:pointer;font-size:13px;white-space:nowrap}.tt i{position:absolute;left:0;bottom:0;height:3px;background:#60a5fa;animation:tt 10s linear forwards}@keyframes tt{from{width:100%}to{width:0}}
 .lr{display:grid;grid-template-columns:2fr 1.5fr 2fr auto;gap:8px;margin-bottom:8px}
 .dt dt{font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;margin-top:12px}.dt dd{white-space:pre-wrap;margin-top:2px}
 #msg{position:fixed;bottom:18px;right:18px;max-width:380px;padding:12px 16px;border-radius:9px;color:#fff;font-weight:600;z-index:99}
@@ -43,7 +44,7 @@ td{padding:9px 8px;border-bottom:1px solid var(--bd);vertical-align:top}
 </head>
 <body>
 <aside><h1>⚙️ Error MES<small>Smart Machine Error Database</small></h1>
-<div class="nv on" data-v="cat" onclick="nav('cat')">📝 Catat Error</div><div class="nv" data-v="mes" onclick="nav('mes')">🗂️ Error MES</div>
+<div class="nv on" data-v="cat" onclick="nav('cat')">📝 Catat Error</div><div class="nv" data-v="mes" onclick="nav('mes')">🗂️ Error MES</div><div class="nv" data-v="trash" onclick="nav('trash')">🗑️ Tempat Sampah</div>
 </aside>
 <main>
 <section id="v-cat"><div class="crumb">Beranda / Catat Error</div><h2>Catat Error</h2>
@@ -64,9 +65,10 @@ td{padding:9px 8px;border-bottom:1px solid var(--bd);vertical-align:top}
 <div class="bar"><button class="btn" onclick="apply()">Terapkan Filter</button><button class="btn g" onclick="resetF()">Reset Filter</button></div></div>
 <div class="card" id="lst"></div><div class="bar" id="pg" style="justify-content:center"></div></section>
 
+<section id="v-trash" class="hide"></section>
 <section id="v-det" class="hide"></section>
 </main>
-<div id="msg" class="hide"></div>
+<div id="msg" class="hide"></div><div id="toasts"></div>
 
 <script>
 /* ===== KONFIGURASI: isi dengan URL & publishable/anon key project Supabase Anda (JANGAN service_role) ===== */
@@ -92,19 +94,19 @@ function init(){
     return '<div style="'+(t==='t'?'grid-column:1/-1':'')+'"><label>'+l+'</label>'+h+'</div>'}).join('')+'</div></div>').join('');
   $('f-cat').innerHTML='<option value="">Semua</option>'+CATS.map(c=>'<option>'+c+'</option>').join('');
   addLk();
-  nav('cat');
+  nav('cat');purgeExpired();
 }
-function nav(v){['cat','mes','det'].forEach(x=>$('v-'+x).classList.toggle('hide',x!==v));
-  document.querySelectorAll('.nv').forEach(n=>n.classList.toggle('on',n.dataset.v===(v==='det'?'mes':v)));if(v==='mes')load();if(v==='cat')esearch()}
+function nav(v){['cat','mes','det','trash'].forEach(x=>$('v-'+x).classList.toggle('hide',x!==v));
+  document.querySelectorAll('.nv').forEach(n=>n.classList.toggle('on',n.dataset.v===(v==='det'?'mes':v)));if(v==='mes')load();if(v==='cat')esearch();if(v==='trash')loadTrash()}
 
 /* ===== CATAT ERROR ===== */
 function addPh(inp){for(const f of inp.files){
   if(!/^image\/(jpeg|png|webp)$/.test(f.type)){msg('"'+f.name+'" bukan JPG/PNG/WEBP.');continue}
   if(f.size>MAXB){msg('"'+f.name+'" melebihi 5 MB.');continue}
   PH.push({file:f,caption:'',url:URL.createObjectURL(f)})}inp.value='';rPh()}
-function rPh(){const off=OLD.filter(x=>x.attachment_type==='image').length;$('phl').innerHTML=PH.map((p,i)=>'<div class="pf"><button class="x" title="Hapus gambar" onclick="PH.splice('+i+',1);rPh()">×</button><b>Gambar '+(off+i+1)+'</b><img src="'+p.url+'"><label>Penjelasan / deskripsi Gambar '+(off+i+1)+'</label><textarea placeholder="Jelaskan isi gambar ini…" oninput="PH['+i+'].caption=this.value">'+esc(p.caption)+'</textarea></div>').join('')}
+function rPh(){const off=OLD.filter(x=>x.attachment_type==='image').length;$('phl').innerHTML=PH.map((p,i)=>'<div class="pf"><button class="x" title="Hapus gambar" onclick="rmPh('+i+')">×</button><b>Gambar '+(off+i+1)+'</b><img src="'+p.url+'"><label>Penjelasan / deskripsi Gambar '+(off+i+1)+'</label><textarea placeholder="Jelaskan isi gambar ini…" oninput="PH['+i+'].caption=this.value">'+esc(p.caption)+'</textarea></div>').join('')}
 function addLk(){LK.push({url:'',title:'',caption:''});rLk()}
-function rLk(){$('lkl').innerHTML=LK.map((l,i)=>'<div class="lr"><input placeholder="https://…" value="'+esc(l.url)+'" oninput="LK['+i+'].url=this.value"><input placeholder="Judul referensi" value="'+esc(l.title)+'" oninput="LK['+i+'].title=this.value"><input placeholder="Keterangan" value="'+esc(l.caption)+'" oninput="LK['+i+'].caption=this.value"><button class="btn r" onclick="LK.splice('+i+',1);rLk()">×</button></div>').join('')}
+function rLk(){$('lkl').innerHTML=LK.map((l,i)=>'<div class="lr"><input placeholder="https://…" value="'+esc(l.url)+'" oninput="LK['+i+'].url=this.value"><input placeholder="Judul referensi" value="'+esc(l.title)+'" oninput="LK['+i+'].title=this.value"><input placeholder="Keterangan" value="'+esc(l.caption)+'" oninput="LK['+i+'].caption=this.value"><button class="btn r" onclick="rmLk('+i+')">×</button></div>').join('')}
 function vUrl(u){try{const x=new URL(u);return x.protocol==='http:'||x.protocol==='https:'}catch(e){return false}}
 function formData(){const o={};FIELDS.forEach(s=>s[1].forEach(f=>{let v=$('e-'+f[0]).value.trim();if(f[0]==='occurred_at')v=v?new Date(v).toISOString():null;o[f[0]]=v===''?null:v}));return o}
 let EID=null,OLD=[],DEL=[];
@@ -116,7 +118,10 @@ function rOld(){const c=$('oldatt');if(!EID){c.classList.add('hide');return}c.cl
   c.innerHTML='<h3>Lampiran Tersimpan</h3>'+OLD.filter(x=>x.attachment_type==='image').map((x,n)=>'<div class="pf"><button class="x" title="Hapus gambar" onclick="rmOld(\''+x.id+'\')">×</button><b>Gambar '+(n+1)+'</b><img src="'+x.src+'"><div class="sn">'+esc(x.caption||'Tidak ada keterangan')+'</div></div>').join('')
    +OLD.filter(x=>x.attachment_type==='link').map(x=>'<p style="margin-top:8px"><a href="'+esc(x.url)+'" target="_blank" rel="noopener">'+esc(x.title||x.url)+'</a> <button class="btn r" style="padding:2px 8px" onclick="rmOld(\''+x.id+'\')">×</button><br><span class="mu">'+esc(x.caption||'')+'</span></p>').join('')
    +'<p class="mu" style="margin-top:8px">Tekan × untuk menghapus lampiran (berlaku saat disimpan). Foto/link baru bisa ditambahkan di kotak di bawah.</p>'}
-function rmOld(id){const i=OLD.findIndex(x=>x.id===id);if(i<0)return;DEL.push(OLD[i]);OLD.splice(i,1);rOld();rPh()}
+function rmOld(id){const i=OLD.findIndex(x=>x.id===id);if(i<0)return;const it=OLD[i];DEL.push(it);OLD.splice(i,1);rOld();rPh();
+  toast('Lampiran dihapus (berlaku saat Simpan Perubahan)',()=>{DEL=DEL.filter(x=>x!==it);OLD.splice(i,0,it);rOld();rPh()})}
+function rmPh(i){const it=PH.splice(i,1)[0];rPh();toast('Gambar dihapus dari daftar',()=>{PH.splice(i,0,it);rPh()})}
+function rmLk(i){const it=LK.splice(i,1)[0];rLk();toast('Link dihapus dari daftar',()=>{LK.splice(i,0,it);rLk()})}
 async function editErr(id){try{
   const e=await db.from('machine_errors').select('*').eq('id',id).single();if(e.error)throw e.error;
   const a=await db.from('error_attachments').select('*').eq('error_id',id).order('created_at');if(a.error)throw a.error;
@@ -126,10 +131,31 @@ async function editErr(id){try{
   rOld();rPh();$('ebanner').innerHTML='✏️ <b>Mode Edit:</b> '+esc(d.title)+' <span class="mu">(ID '+id.slice(0,8).toUpperCase()+')</span><div class="bar"><button class="btn g" onclick="resetForm()">Batal Edit</button><button class="btn r" onclick="delErr()">🗑️ Hapus Error Ini</button></div>';
   $('ebanner').classList.remove('hide');$('sv').textContent='💾 Simpan Perubahan';$('ebanner').scrollIntoView({behavior:'smooth'})
 }catch(x){msg('Gagal membuka data: '+(x.message||x))}}
-async function delErr(){if(!EID||!confirm('Hapus error ini beserta semua foto & link-nya? Tidak bisa dibatalkan.'))return;
-  const p=OLD.concat(DEL).filter(x=>x.file_path).map(x=>x.file_path);
-  const r=await db.from('machine_errors').delete().eq('id',EID);if(r.error)return msg('Gagal menghapus: '+r.error.message);
-  if(p.length)await db.storage.from(BUCKET).remove(p);msg('Error dihapus.',true);resetForm();esearch()}
+function toast(txt,onUndo,onEnd){const d=document.createElement('div');d.className='tt';d.innerHTML='<span>'+esc(txt)+'</span><button>Urungkan</button><i></i>';$('toasts').appendChild(d);
+  let done=false;const t=setTimeout(()=>{done=true;d.remove();if(onEnd)onEnd()},10000);
+  d.querySelector('button').onclick=()=>{if(done)return;done=true;clearTimeout(t);d.remove();onUndo()}}
+function refresh(){esearch();if(!$('v-mes').classList.contains('hide'))load();if(!$('v-trash').classList.contains('hide'))loadTrash();if(!$('v-det').classList.contains('hide'))nav('mes')}
+function delErr(){if(EID)softDel(EID,$('e-title').value)}
+async function softDel(id,title){const r=await db.from('machine_errors').update({deleted_at:new Date().toISOString()}).eq('id',id);
+  if(r.error)return msg('Gagal menghapus: '+r.error.message+' (sudah menjalankan trash.sql?)');
+  if(EID===id)resetForm();refresh();
+  toast('“'+(title||'Error')+'” dipindahkan ke Tempat Sampah',async()=>{const u=await db.from('machine_errors').update({deleted_at:null}).eq('id',id);if(u.error)msg('Gagal mengurungkan: '+u.error.message);else{msg('Error dikembalikan.',true);refresh()}})}
+let PEND=new Set();
+async function purgeOne(id){const a=await db.from('error_attachments').select('file_path').eq('error_id',id).eq('attachment_type','image');
+  const p=(a.data||[]).map(x=>x.file_path).filter(Boolean);if(p.length)await db.storage.from(BUCKET).remove(p);
+  return db.from('machine_errors').delete().eq('id',id)}
+async function purgeExpired(){try{const r=await db.from('machine_errors').select('id').lt('deleted_at',new Date(Date.now()-30*864e5).toISOString());for(const x of(r.data||[]))await purgeOne(x.id)}catch(e){}}
+async function loadTrash(){const v=$('v-trash');
+  const head='<div class="crumb">Beranda / Tempat Sampah</div><h2>Tempat Sampah</h2><p class="mu" style="margin-bottom:12px">Error yang dihapus disimpan 30 hari di sini, lalu dihapus permanen otomatis beserta foto-fotonya.</p>';
+  await purgeExpired();const r=await db.from('machine_errors').select('id,title,error_code,machine_name,category,deleted_at').not('deleted_at','is',null).order('deleted_at',{ascending:false});
+  if(r.error){v.innerHTML=head+'<div class="card empty" style="color:var(--red)">Gagal memuat: '+esc(r.error.message)+'<br>Pastikan trash.sql sudah dijalankan.</div>';return}
+  const d=r.data.filter(x=>!PEND.has(x.id));
+  v.innerHTML=head+(d.length?'<div class="card"><table><tr><th>Error</th><th>Mesin</th><th>Dihapus</th><th>Sisa waktu</th><th></th></tr>'+d.map(e=>{const left=Math.max(0,30-Math.floor((Date.now()-new Date(e.deleted_at))/864e5));
+   return '<tr><td><b>'+esc(e.title)+'</b> '+(e.error_code?'<span class="tg">'+esc(e.error_code)+'</span>':'')+'</td><td>'+esc(e.machine_name||'—')+'<div class="mu">'+esc(e.category||'')+'</div></td><td>'+new Date(e.deleted_at).toLocaleDateString('id-ID')+'</td><td>'+left+' hari</td><td style="white-space:nowrap"><button class="btn g" data-t="'+esc(e.title)+'" data-a="'+e.deleted_at+'" onclick="restoreErr(\''+e.id+'\',this.dataset.t,this.dataset.a)">↩️ Pulihkan</button> <button class="btn r" data-t="'+esc(e.title)+'" onclick="permDel(\''+e.id+'\',this.dataset.t)">Hapus Permanen</button></td></tr>'}).join('')+'</table></div>':'<div class="card empty">Tempat sampah kosong.</div>')}
+async function restoreErr(id,title,at){const r=await db.from('machine_errors').update({deleted_at:null}).eq('id',id);if(r.error)return msg('Gagal memulihkan: '+r.error.message);loadTrash();esearch();
+  toast('“'+title+'” dipulihkan',async()=>{await db.from('machine_errors').update({deleted_at:at}).eq('id',id);loadTrash();esearch()})}
+function permDel(id,title){PEND.add(id);loadTrash();
+  toast('“'+title+'” dihapus permanen dalam 10 detik',()=>{PEND.delete(id);loadTrash()},async()=>{const r=await purgeOne(id);PEND.delete(id);if(r.error)msg('Gagal hapus permanen: '+r.error.message);loadTrash()})}
 async function save(){const o=formData();if(!o.title)return msg('Judul Error wajib diisi.');o.status=o.status||'Open';
   const lks=LK.filter(l=>l.url.trim());for(const l of lks)if(!vUrl(l.url.trim()))return msg('URL tidak valid: '+l.url);
   const b=$('sv'),isNew=!EID,old=b.textContent;b.disabled=true;b.textContent='Menyimpan…';let id=EID,up=[];
@@ -172,7 +198,7 @@ async function load(){const my=++SEQ;const raw=$('q').value.trim();
    '<tr><td class="mu">'+e.id.slice(0,8).toUpperCase()+'</td><td><b>'+esc(e.title)+'</b> '+(e.error_code?'<span class="tg">'+esc(e.error_code)+'</span>':'')
    +(raw?'<div class="sn"><b>Gejala:</b> '+esc((e.symptoms||'—').slice(0,140))+'<br><b>Penyebab terdokumentasi:</b> '+esc((e.cause_analysis||'—').slice(0,140))+'<br><b>Solusi sebelumnya:</b> '+esc((e.solution||'—').slice(0,140))+'<br><span class="mu">Skor kecocokan: '+Number(e.rank).toFixed(2)+' · verifikasi dulu pada kondisi mesin saat ini</span></div>':'')
    +'</td><td>'+esc(e.machine_name||'—')+'<div class="mu">'+esc(e.production_line||'')+'</div></td><td>'+esc(e.category||'—')+'</td><td>'+(e.occurred_at?new Date(e.occurred_at).toLocaleDateString('id-ID'):'—')+'</td><td><span class="tg '+(e.status==='In Progress'?'In':e.status)+'">'+e.status+'</span></td>'
-   +'<td style="white-space:nowrap"><button class="btn g" onclick="detail(\''+e.id+'\')">Detail</button> <button class="btn g" onclick="pdfOf(\''+e.id+'\',0)">Preview PDF</button> <button class="btn g" onclick="pdfOf(\''+e.id+'\',1)">⬇ PDF</button></td></tr>').join('')+'</table>';
+   +'<td style="white-space:nowrap"><button class="btn g" onclick="detail(\''+e.id+'\')">Detail</button> <button class="btn g" onclick="pdfOf(\''+e.id+'\',0)">Preview PDF</button> <button class="btn g" onclick="pdfOf(\''+e.id+'\',1)">⬇ PDF</button> <button class="btn r" title="Hapus" data-t="'+esc(e.title)+'" onclick="softDel(\''+e.id+'\',this.dataset.t)">🗑️</button></td></tr>').join('')+'</table>';
   const n=Math.ceil(TOT/PER);$('pg').innerHTML='<button class="btn g" '+(page?'':'disabled')+' onclick="page--;load()">‹</button><span class="mu" style="align-self:center">Halaman '+(page+1)+' / '+n+' · '+TOT+' data</span><button class="btn g" '+(page+1<n?'':'disabled')+' onclick="page++;load()">›</button>'}
 async function full(id){const e=await db.from('machine_errors').select('*').eq('id',id).single();if(e.error)throw e.error;
   const a=await db.from('error_attachments').select('*').eq('error_id',id).order('created_at');if(a.error)throw a.error;
@@ -181,7 +207,7 @@ async function full(id){const e=await db.from('machine_errors').select('*').eq('
   return{e:e.data,imgs,lks}}
 async function detail(id){nav('det');const v=$('v-det');v.innerHTML='<div class="empty">Memuat…</div>';
   try{const{e,imgs,lks}=await full(id);
-  v.innerHTML='<div class="crumb">Beranda / Error MES / Detail</div><h2>'+esc(e.title)+(e.error_code?' <span class="tg">'+esc(e.error_code)+'</span>':'')+'</h2><div class="bar" style="margin:0 0 12px"><button class="btn g" onclick="nav(\'mes\')">← Kembali ke Error MES</button><button class="btn g" onclick="pdfOf(\''+id+'\',0)">Preview PDF</button><button class="btn" onclick="pdfOf(\''+id+'\',1)">Download PDF</button></div><div class="card"><dl class="dt"><dt>ID</dt><dd>'+id+'</dd>'
+  v.innerHTML='<div class="crumb">Beranda / Error MES / Detail</div><h2>'+esc(e.title)+(e.error_code?' <span class="tg">'+esc(e.error_code)+'</span>':'')+'</h2><div class="bar" style="margin:0 0 12px"><button class="btn g" onclick="nav(\'mes\')">← Kembali ke Error MES</button><button class="btn g" onclick="pdfOf(\''+id+'\',0)">Preview PDF</button><button class="btn" onclick="pdfOf(\''+id+'\',1)">Download PDF</button><button class="btn r" data-t="'+esc(e.title)+'" onclick="softDel(\''+id+'\',this.dataset.t)">🗑️ Hapus</button></div><div class="card"><dl class="dt"><dt>ID</dt><dd>'+id+'</dd>'
    +Object.keys(LBL).filter(k=>k!=='title'&&k!=='error_code').map(k=>{let v=e[k];if(k==='occurred_at'&&v)v=new Date(v).toLocaleString('id-ID');return v?'<dt>'+LBL[k]+'</dt><dd>'+esc(v)+'</dd>':''}).join('')
    +'</dl></div>'+(imgs.length?'<div class="card"><h3>Foto Error</h3>'+imgs.map((i,n)=>'<div class="pf"><b>Gambar '+(n+1)+'</b>'+(i.src?'<a href="'+i.src+'" target="_blank"><img src="'+i.src+'"></a>':'<span class="mu">Foto tidak dapat diakses</span>')+'<div class="sn">'+esc(i.caption||'Tidak ada keterangan')+'</div></div>').join('')+'</div>':'')
    +(lks.length?'<div class="card"><h3>Link Referensi</h3>'+lks.map(l=>'<p><a href="'+esc(l.url)+'" target="_blank" rel="noopener">'+esc(l.title||l.url)+'</a><br><span class="mu">'+esc(l.caption||'')+'</span></p>').join('')+'</div>':'');
