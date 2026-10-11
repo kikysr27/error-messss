@@ -40,7 +40,22 @@ td{padding:9px 8px;border-bottom:1px solid var(--bd);vertical-align:top}
 #msg{position:fixed;bottom:18px;right:18px;max-width:380px;padding:12px 16px;border-radius:9px;color:#fff;font-weight:600;z-index:99}
 #msg.ok{background:var(--grn)}#msg.er{background:var(--red)}
 .empty{text-align:center;padding:30px;color:var(--mu)}
-@media(max-width:800px){aside{display:none}.lr{grid-template-columns:1fr}}
+.ni{margin-right:8px}.lo{margin-top:14px;border-top:1px solid rgba(255,255,255,.2);border-radius:0 0 8px 8px;padding-top:14px}#mtop{display:none}
+@media(max-width:800px){
+body{flex-direction:column;font-size:15px}
+#mtop{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--nav);color:#fff;padding:11px 14px;position:sticky;top:0;z-index:30;font-weight:700}#mtop small{font-weight:400;opacity:.75;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+aside{display:flex!important;position:fixed;top:auto;bottom:0;left:0;right:0;width:100%;height:auto;padding:5px 4px calc(5px + env(safe-area-inset-bottom,0px));flex-direction:row;justify-content:space-around;z-index:40;box-shadow:0 -4px 14px rgba(0,0,0,.25)}
+aside h1,#usr{display:none}
+.nv{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 2px;margin:0;border-radius:8px;text-align:center}.nv .ni{margin:0;font-size:20px;line-height:1.2}.nv .nl{font-size:10.5px;line-height:1.15}.nv .d{display:none}
+.lo{margin-top:0;border-top:0;border-radius:8px;padding-top:6px}
+main{padding:14px 12px 96px}h2{font-size:18px}.card{padding:14px}
+input,select,textarea{font-size:16px}.btn{padding:11px 14px}
+.lr{grid-template-columns:1fr}.fg{grid-template-columns:1fr 1fr}.pf,.th>div{max-width:100%}
+table,tbody,tr,td{display:block;width:100%}tr:has(>th){display:none}
+tr{border:1px solid var(--bd);border-radius:10px;padding:10px;margin-bottom:10px;background:#fff}td{border:0;padding:3px 0}
+td:last-child{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;white-space:normal!important}td:last-child .btn{flex:1;min-width:90px;text-align:center}
+#toasts{left:10px;right:10px;bottom:84px}.tt{max-width:none}#msg{left:10px;right:10px;bottom:84px;max-width:none}
+}
 </style>
 </head>
 <body>
@@ -48,8 +63,9 @@ td{padding:9px 8px;border-bottom:1px solid var(--bd);vertical-align:top}
 <button class="gbtn" onclick="googleLogin()"><svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.6 5.9c4.4-4.1 7-10.1 7-17.6z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.4-.8-3-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C.9 16.5 0 20.1 0 24s.9 7.5 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.6-5.9c-2.1 1.4-4.9 2.3-8.3 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>Masuk dengan Google</button></div></div>
 <div id="gate" class="hide"><div class="card" id="gate-c"></div></div>
 <aside><h1>⚙️ Error MES<small>Smart Machine Error Database</small></h1>
-<div class="nv on" data-v="cat" onclick="nav('cat')">📝 Catat Error</div><div class="nv" data-v="mes" onclick="nav('mes')">🗂️ Error MES</div><div class="nv" data-v="trash" onclick="nav('trash')">🗑️ Tempat Sampah</div><div class="nv hide" id="nv-acc" data-v="acc" onclick="nav('acc')">👤 Akun <span id="pbadge" class="badge hide"></span></div><div class="nv" onclick="logout()" style="margin-top:14px;border-top:1px solid rgba(255,255,255,.2);border-radius:0 0 8px 8px;padding-top:14px">🚪 Keluar (Logout)</div>
+<div class="nv on" data-v="cat" onclick="nav('cat')"><span class="ni">📝</span><span class="nl">Catat Error</span></div><div class="nv" data-v="mes" onclick="nav('mes')"><span class="ni">🗂️</span><span class="nl">Error MES</span></div><div class="nv" data-v="trash" onclick="nav('trash')"><span class="ni">🗑️</span><span class="nl"><span class="d">Tempat </span>Sampah</span></div><div class="nv hide" id="nv-acc" data-v="acc" onclick="nav('acc')"><span class="ni">👤</span><span class="nl">Akun <span id="pbadge" class="badge hide"></span></span></div><div class="nv lo" onclick="logout()"><span class="ni">🚪</span><span class="nl">Keluar<span class="d"> (Logout)</span></span></div>
 <div id="usr"><span id="usr-e"></span></div></aside>
+<header id="mtop"><span>⚙️ Error MES</span><small id="usr-m"></small></header>
 <main>
 <section id="v-cat"><div class="crumb">Beranda / Catat Error</div><h2>Catat Error</h2>
 <div class="card"><h3>🔎 Cari &amp; Edit Error yang Sudah Ada</h3><input id="eq" placeholder="Ketik untuk mencari (judul, mesin, deskripsi, penyebab, solusi…)" oninput="deb(esearch)"><div id="elist" style="margin-top:8px"></div></div>
@@ -62,11 +78,11 @@ td{padding:9px 8px;border-bottom:1px solid var(--bd);vertical-align:top}
 
 <section id="v-mes" class="hide"><div class="crumb">Beranda / Error MES</div><h2>Error MES</h2>
 <div class="card"><label>🔍 Smart Search (gejala, kode, mesin, penyebab, solusi…)</label><input id="q" placeholder="cth: servo tidak bergerak / AL-52" oninput="deb(apply)">
-<div class="g2" style="margin-top:12px">
+<details id="flt" open style="margin-top:10px"><summary style="cursor:pointer;font-weight:700;color:var(--nav);padding:6px 0">⚙️ Filter (kategori, mesin, line, status, tanggal)</summary><div class="g2 fg" style="margin-top:8px">
 <div><label>Kategori</label><select id="f-cat" onchange="apply()"></select></div><div><label>Nama mesin</label><input id="f-mc" oninput="deb(apply)"></div><div><label>Lokasi / Line</label><input id="f-ln" oninput="deb(apply)"></div>
 <div><label>Kode error</label><input id="f-cd" oninput="deb(apply)"></div><div><label>Status</label><select id="f-st" onchange="apply()"><option value="">Semua</option><option>Open</option><option>In Progress</option><option>Resolved</option></select></div>
 <div><label>Tanggal awal</label><input type="date" id="f-d1" onchange="apply()"></div><div><label>Tanggal akhir</label><input type="date" id="f-d2" onchange="apply()"></div></div>
-<div class="bar"><button class="btn" onclick="apply()">Terapkan Filter</button><button class="btn g" onclick="resetF()">Reset Filter</button></div></div>
+<div class="bar"><button class="btn" onclick="apply()">Terapkan Filter</button><button class="btn g" onclick="resetF()">Reset Filter</button></div></details></div>
 <div class="card" id="lst"></div><div class="bar" id="pg" style="justify-content:center"></div></section>
 
 <section id="v-trash" class="hide"></section>
@@ -98,7 +114,7 @@ function init(){
     else if(t==='t')h='<textarea id="e-'+k+'"></textarea>';else h='<input id="e-'+k+'">';
     return '<div style="'+(t==='t'?'grid-column:1/-1':'')+'"><label>'+l+'</label>'+h+'</div>'}).join('')+'</div></div>').join('');
   $('f-cat').innerHTML='<option value="">Semua</option>'+CATS.map(c=>'<option>'+c+'</option>').join('');
-  addLk();
+  addLk();if(innerWidth<=800)$('flt').open=false;
   db.auth.getSession().then(r=>{if(r.data.session)enter(r.data.session);else $('login').classList.remove('hide')});
   db.auth.onAuthStateChange((ev,ses)=>{if(ev==='SIGNED_OUT')location.reload();else if(ev==='SIGNED_IN'&&$('login').classList.contains('hide')===false)enter(ses)});
 }
@@ -109,7 +125,7 @@ function gate(st,info){const c=$('gate-c');$('gate').classList.remove('hide');
   else if(st==='rejected'){clearInterval(GT);GT=null;c.innerHTML='<h2>⛔ Akses Ditolak</h2><p>Akun <b>'+esc(info)+'</b> tidak diizinkan oleh master.</p><div class="bar">'+out+'</div>'}
   else{clearInterval(GT);GT=null;c.innerHTML='<h2>⚠️ Gagal</h2><p>'+esc(info)+'</p><div class="bar">'+out+'</div>'}}
 function recheck(){db.auth.getSession().then(r=>{if(r.data.session)enter(r.data.session)})}
-async function enter(ses){$('login').classList.add('hide');const em=(ses&&ses.user&&ses.user.email)||'';$('usr-e').textContent=em;
+async function enter(ses){$('login').classList.add('hide');const em=(ses&&ses.user&&ses.user.email)||'';$('usr-e').textContent=em;$('usr-m').textContent=em;
   const r=await db.rpc('register_me');
   if(r.error||!r.data||!r.data.length){gate('err','Gagal memeriksa izin akun: '+(r.error?r.error.message:'data kosong')+'. Pastikan master.sql sudah dijalankan.');return}
   const u=r.data[0];if(u.status!=='approved'){gate(u.status,em);return}
