@@ -32,6 +32,7 @@ td{padding:9px 8px;border-bottom:1px solid var(--bd);vertical-align:top}
 .mu{color:var(--mu);font-size:12px}.hide{display:none!important}.sn{font-size:12px;color:#334;margin-top:3px}
 .th{display:flex;gap:10px;flex-wrap:wrap}.th>div{width:170px;border:1px solid var(--bd);border-radius:8px;padding:6px;position:relative}
 .th img{width:100%;height:110px;object-fit:cover;border-radius:5px}.th .x{position:absolute;top:2px;right:2px;background:var(--red);color:#fff;border:0;border-radius:50%;width:22px;height:22px;cursor:pointer}
+.pf{position:relative;border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:12px;max-width:600px;background:#fff}.pf b{display:block;margin-bottom:6px;color:var(--nav)}.pf img{width:100%;max-height:380px;object-fit:contain;background:var(--bg);border-radius:6px;display:block}.pf label{margin-top:8px}.pf .x{position:absolute;top:8px;right:8px;background:var(--red);color:#fff;border:0;border-radius:50%;width:26px;height:26px;cursor:pointer;z-index:2}
 .lr{display:grid;grid-template-columns:2fr 1.5fr 2fr auto;gap:8px;margin-bottom:8px}
 .dt dt{font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;margin-top:12px}.dt dd{white-space:pre-wrap;margin-top:2px}
 #msg{position:fixed;bottom:18px;right:18px;max-width:380px;padding:12px 16px;border-radius:9px;color:#fff;font-weight:600;z-index:99}
@@ -50,7 +51,7 @@ td{padding:9px 8px;border-bottom:1px solid var(--bd);vertical-align:top}
 <div class="card hide" id="ebanner" style="border-color:var(--ac)"></div>
 <div id="form"></div>
 <div class="card hide" id="oldatt"></div>
-<div class="card"><h3>Foto Error</h3><input type="file" id="ph" accept="image/jpeg,image/png,image/webp" multiple onchange="addPh(this)"><p class="mu" style="margin:6px 0">JPG/PNG/WEBP, maks 5 MB per foto.</p><div class="th" id="phl"></div></div>
+<div class="card"><h3>Foto Error</h3><input type="file" id="ph" accept="image/jpeg,image/png,image/webp" multiple onchange="addPh(this)"><p class="mu" style="margin:6px 0">JPG/PNG/WEBP, maks 5 MB per foto.</p><div id="phl"></div></div>
 <div class="card"><h3>Link Referensi</h3><div id="lkl"></div><button class="btn g" onclick="addLk()">+ Tambah Link</button></div>
 <div class="bar"><button class="btn" id="sv" onclick="save()">💾 Simpan Error</button><button class="btn g" onclick="prevForm()">👁️ Preview Dokumentasi</button><button class="btn g" onclick="resetForm()">Reset Form</button></div></section>
 
@@ -101,7 +102,7 @@ function addPh(inp){for(const f of inp.files){
   if(!/^image\/(jpeg|png|webp)$/.test(f.type)){msg('"'+f.name+'" bukan JPG/PNG/WEBP.');continue}
   if(f.size>MAXB){msg('"'+f.name+'" melebihi 5 MB.');continue}
   PH.push({file:f,caption:'',url:URL.createObjectURL(f)})}inp.value='';rPh()}
-function rPh(){$('phl').innerHTML=PH.map((p,i)=>'<div><button class="x" onclick="PH.splice('+i+',1);rPh()">×</button><img src="'+p.url+'"><input placeholder="Keterangan foto" value="'+esc(p.caption)+'" oninput="PH['+i+'].caption=this.value"></div>').join('')}
+function rPh(){const off=OLD.filter(x=>x.attachment_type==='image').length;$('phl').innerHTML=PH.map((p,i)=>'<div class="pf"><button class="x" title="Hapus gambar" onclick="PH.splice('+i+',1);rPh()">×</button><b>Gambar '+(off+i+1)+'</b><img src="'+p.url+'"><label>Penjelasan / deskripsi Gambar '+(off+i+1)+'</label><textarea placeholder="Jelaskan isi gambar ini…" oninput="PH['+i+'].caption=this.value">'+esc(p.caption)+'</textarea></div>').join('')}
 function addLk(){LK.push({url:'',title:'',caption:''});rLk()}
 function rLk(){$('lkl').innerHTML=LK.map((l,i)=>'<div class="lr"><input placeholder="https://…" value="'+esc(l.url)+'" oninput="LK['+i+'].url=this.value"><input placeholder="Judul referensi" value="'+esc(l.title)+'" oninput="LK['+i+'].title=this.value"><input placeholder="Keterangan" value="'+esc(l.caption)+'" oninput="LK['+i+'].caption=this.value"><button class="btn r" onclick="LK.splice('+i+',1);rLk()">×</button></div>').join('')}
 function vUrl(u){try{const x=new URL(u);return x.protocol==='http:'||x.protocol==='https:'}catch(e){return false}}
@@ -112,17 +113,17 @@ async function esearch(){const my=++SEQ2;const r=await srch($('eq').value,{},8,0
   if(r.error){$('elist').innerHTML='<div class="mu" style="color:var(--red)">Gagal memuat: '+esc(r.error.message)+'</div>';return}
   $('elist').innerHTML=r.data.length?'<table>'+r.data.map(e=>'<tr><td><b>'+esc(e.title)+'</b> '+(e.error_code?'<span class="tg">'+esc(e.error_code)+'</span>':'')+'<div class="mu">'+esc(e.machine_name||'—')+' · '+esc(e.category||'—')+' · '+e.status+'</div></td><td style="text-align:right;white-space:nowrap"><button class="btn g" onclick="editErr(\''+e.id+'\')">✏️ Edit</button></td></tr>').join('')+'</table>':'<div class="mu">Tidak ada data yang cocok.</div>'}
 function rOld(){const c=$('oldatt');if(!EID){c.classList.add('hide');return}c.classList.remove('hide');
-  c.innerHTML='<h3>Lampiran Tersimpan</h3><div class="th">'+OLD.filter(x=>x.attachment_type==='image').map(x=>'<div><button class="x" onclick="rmOld(\''+x.id+'\')">×</button><img src="'+x.src+'"><div class="mu">'+esc(x.caption||x.title||'')+'</div></div>').join('')+'</div>'
+  c.innerHTML='<h3>Lampiran Tersimpan</h3>'+OLD.filter(x=>x.attachment_type==='image').map((x,n)=>'<div class="pf"><button class="x" title="Hapus gambar" onclick="rmOld(\''+x.id+'\')">×</button><b>Gambar '+(n+1)+'</b><img src="'+x.src+'"><div class="sn">'+esc(x.caption||'Tidak ada keterangan')+'</div></div>').join('')
    +OLD.filter(x=>x.attachment_type==='link').map(x=>'<p style="margin-top:8px"><a href="'+esc(x.url)+'" target="_blank" rel="noopener">'+esc(x.title||x.url)+'</a> <button class="btn r" style="padding:2px 8px" onclick="rmOld(\''+x.id+'\')">×</button><br><span class="mu">'+esc(x.caption||'')+'</span></p>').join('')
    +'<p class="mu" style="margin-top:8px">Tekan × untuk menghapus lampiran (berlaku saat disimpan). Foto/link baru bisa ditambahkan di kotak di bawah.</p>'}
-function rmOld(id){const i=OLD.findIndex(x=>x.id===id);if(i<0)return;DEL.push(OLD[i]);OLD.splice(i,1);rOld()}
+function rmOld(id){const i=OLD.findIndex(x=>x.id===id);if(i<0)return;DEL.push(OLD[i]);OLD.splice(i,1);rOld();rPh()}
 async function editErr(id){try{
   const e=await db.from('machine_errors').select('*').eq('id',id).single();if(e.error)throw e.error;
   const a=await db.from('error_attachments').select('*').eq('error_id',id).order('created_at');if(a.error)throw a.error;
   resetForm();EID=id;const d=e.data;
   FIELDS.forEach(s=>s[1].forEach(f=>{let v=d[f[0]];if(f[0]==='occurred_at'&&v){const x=new Date(v);v=new Date(x-x.getTimezoneOffset()*6e4).toISOString().slice(0,16)}$('e-'+f[0]).value=v||(f[0]==='status'?'Open':'')}));
   for(const x of a.data){if(x.attachment_type==='image'){const u=await db.storage.from(BUCKET).createSignedUrl(x.file_path,3600);x.src=u.data?u.data.signedUrl:''}OLD.push(x)}
-  rOld();$('ebanner').innerHTML='✏️ <b>Mode Edit:</b> '+esc(d.title)+' <span class="mu">(ID '+id.slice(0,8).toUpperCase()+')</span><div class="bar"><button class="btn g" onclick="resetForm()">Batal Edit</button><button class="btn r" onclick="delErr()">🗑️ Hapus Error Ini</button></div>';
+  rOld();rPh();$('ebanner').innerHTML='✏️ <b>Mode Edit:</b> '+esc(d.title)+' <span class="mu">(ID '+id.slice(0,8).toUpperCase()+')</span><div class="bar"><button class="btn g" onclick="resetForm()">Batal Edit</button><button class="btn r" onclick="delErr()">🗑️ Hapus Error Ini</button></div>';
   $('ebanner').classList.remove('hide');$('sv').textContent='💾 Simpan Perubahan';$('ebanner').scrollIntoView({behavior:'smooth'})
 }catch(x){msg('Gagal membuka data: '+(x.message||x))}}
 async function delErr(){if(!EID||!confirm('Hapus error ini beserta semua foto & link-nya? Tidak bisa dibatalkan.'))return;
@@ -182,7 +183,7 @@ async function detail(id){nav('det');const v=$('v-det');v.innerHTML='<div class=
   try{const{e,imgs,lks}=await full(id);
   v.innerHTML='<div class="crumb">Beranda / Error MES / Detail</div><h2>'+esc(e.title)+(e.error_code?' <span class="tg">'+esc(e.error_code)+'</span>':'')+'</h2><div class="bar" style="margin:0 0 12px"><button class="btn g" onclick="nav(\'mes\')">← Kembali ke Error MES</button><button class="btn g" onclick="pdfOf(\''+id+'\',0)">Preview PDF</button><button class="btn" onclick="pdfOf(\''+id+'\',1)">Download PDF</button></div><div class="card"><dl class="dt"><dt>ID</dt><dd>'+id+'</dd>'
    +Object.keys(LBL).filter(k=>k!=='title'&&k!=='error_code').map(k=>{let v=e[k];if(k==='occurred_at'&&v)v=new Date(v).toLocaleString('id-ID');return v?'<dt>'+LBL[k]+'</dt><dd>'+esc(v)+'</dd>':''}).join('')
-   +'</dl></div>'+(imgs.length?'<div class="card"><h3>Foto</h3><div class="th">'+imgs.map(i=>'<div style="width:240px">'+(i.src?'<a href="'+i.src+'" target="_blank"><img src="'+i.src+'" style="height:160px"></a>':'<span class="mu">Foto tidak dapat diakses</span>')+'<div class="mu">'+esc(i.caption||'')+'</div></div>').join('')+'</div></div>':'')
+   +'</dl></div>'+(imgs.length?'<div class="card"><h3>Foto Error</h3>'+imgs.map((i,n)=>'<div class="pf"><b>Gambar '+(n+1)+'</b>'+(i.src?'<a href="'+i.src+'" target="_blank"><img src="'+i.src+'"></a>':'<span class="mu">Foto tidak dapat diakses</span>')+'<div class="sn">'+esc(i.caption||'Tidak ada keterangan')+'</div></div>').join('')+'</div>':'')
    +(lks.length?'<div class="card"><h3>Link Referensi</h3>'+lks.map(l=>'<p><a href="'+esc(l.url)+'" target="_blank" rel="noopener">'+esc(l.title||l.url)+'</a><br><span class="mu">'+esc(l.caption||'')+'</span></p>').join('')+'</div>':'');
   }catch(x){v.innerHTML='<div class="empty" style="color:var(--red)">Gagal memuat: '+esc(x.message)+'</div>'}}
 
@@ -199,8 +200,8 @@ async function mkPdf(e,imgs,lks,idTxt){const{jsPDF}=window.jspdf;const d=new jsP
   sec('Deskripsi Error',e.description);sec('Gejala yang Ditemukan',e.symptoms);if(e.alarm_message)sec('Alarm / Pesan',e.alarm_message);
   brk(14);y+=3;d.setFont('helvetica','bold');d.setFontSize(11);d.setTextColor(18,48,90);d.text('Foto Error',M,y);y+=6;d.setTextColor(20);
   if(!imgs.length){d.setFont('helvetica','normal');d.setFontSize(10);d.text('-',M,y);y+=5}
-  for(const im of imgs){try{if(!im.src)throw 0;const L=await loadImg(im.src);let w=CW,h=w*L.h/L.w;if(h>95){h=95;w=h*L.w/L.h}brk(h+10);d.addImage(L.d,L.t,M,y,w,h);y+=h+4;
-    d.setFontSize(9);d.setFont('helvetica','italic');d.text(d.splitTextToSize(im.caption||im.title||'',CW),M,y);y+=6}catch(x){fail.push(im.title||'foto')}}
+  let gi=0;for(const im of imgs){gi++;try{if(!im.src)throw 0;const L=await loadImg(im.src);let w=CW,h=w*L.h/L.w;if(h>95){h=95;w=h*L.w/L.h}brk(h+24);d.setFont('helvetica','bold');d.setFontSize(10);d.text('Gambar '+gi,M,y);y+=4.5;d.addImage(L.d,L.t,M,y,w,h);y+=h+4;
+    d.setFontSize(9);d.setFont('helvetica','italic');const cl=d.splitTextToSize(im.caption||'Tidak ada keterangan',CW);d.text(cl,M,y);y+=cl.length*4.3+4}catch(x){fail.push(im.title||'foto')}}
   brk(14);y+=3;d.setFont('helvetica','bold');d.setFontSize(11);d.setTextColor(18,48,90);d.text('Link Referensi',M,y);y+=5.5;d.setTextColor(20);d.setFontSize(10);
   if(!lks.length){d.setFont('helvetica','normal');d.text('-',M,y);y+=5}
   lks.forEach(l=>{brk(11);d.setFont('helvetica','normal');d.setTextColor(29,78,216);d.textWithLink(l.title||l.url,M,y,{url:l.url});y+=4.7;d.setTextColor(20);if(l.caption){d.splitTextToSize(l.caption,CW).forEach(s=>{brk(5);d.text(s,M,y);y+=4.5})}y+=1.5});
