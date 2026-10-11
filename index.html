@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Error MES — Database Error Mesin</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+<style>
+:root{--nav:#12305a;--ac:#1d4ed8;--bg:#f3f5f8;--cd:#fff;--tx:#1b2433;--mu:#6b7686;--bd:#d9dee7;--red:#dc2626;--grn:#15803d;--amb:#b45309}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--tx);display:flex;min-height:100vh;font-size:14px}
+aside{width:220px;background:var(--nav);color:#fff;padding:18px 12px;position:sticky;top:0;height:100vh;flex-shrink:0}
+aside h1{font-size:18px;padding:0 8px 18px}aside small{display:block;font-weight:400;opacity:.65;font-size:11px}
+.nv{padding:11px 12px;border-radius:8px;cursor:pointer;margin-bottom:4px;font-weight:600}
+.nv:hover{background:rgba(255,255,255,.1)}.nv.on{background:var(--ac)}
+main{flex:1;padding:22px 28px;min-width:0}
+.crumb{color:var(--mu);font-size:12px;margin-bottom:4px}h2{font-size:21px;margin-bottom:14px;color:var(--nav)}
+.card{background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:18px;margin-bottom:14px}
+.card h3{font-size:14px;color:var(--nav);margin-bottom:10px;text-transform:uppercase;letter-spacing:.4px}
+.g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+label{display:block;font-size:12px;font-weight:600;margin:0 0 4px;color:var(--mu)}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--bd);border-radius:7px;font:inherit;background:#fff;color:var(--tx)}
+textarea{min-height:70px;resize:vertical}input:focus,select:focus,textarea:focus{outline:2px solid var(--ac);border-color:transparent}
+.btn{background:var(--ac);color:#fff;border:0;border-radius:7px;padding:8px 14px;font-weight:600;cursor:pointer;font-size:13px}
+.btn.g{background:#fff;color:var(--nav);border:1px solid var(--bd)}.btn.r{background:var(--red)}.btn:disabled{opacity:.5;cursor:wait}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}th{text-align:left;color:var(--mu);font-size:11px;text-transform:uppercase;padding:8px;border-bottom:2px solid var(--bd)}
+td{padding:9px 8px;border-bottom:1px solid var(--bd);vertical-align:top}
+.tg{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;background:#e5eaf3;color:var(--nav)}
+.tg.Open{background:#fee2e2;color:var(--red)}.tg.Resolved{background:#dcfce7;color:var(--grn)}.tg.In{background:#fef3c7;color:var(--amb)}
+.mu{color:var(--mu);font-size:12px}.hide{display:none!important}.sn{font-size:12px;color:#334;margin-top:3px}
+.th{display:flex;gap:10px;flex-wrap:wrap}.th>div{width:170px;border:1px solid var(--bd);border-radius:8px;padding:6px;position:relative}
+.th img{width:100%;height:110px;object-fit:cover;border-radius:5px}.th .x{position:absolute;top:2px;right:2px;background:var(--red);color:#fff;border:0;border-radius:50%;width:22px;height:22px;cursor:pointer}
+.lr{display:grid;grid-template-columns:2fr 1.5fr 2fr auto;gap:8px;margin-bottom:8px}
+.dt dt{font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;margin-top:12px}.dt dd{white-space:pre-wrap;margin-top:2px}
+#msg{position:fixed;bottom:18px;right:18px;max-width:380px;padding:12px 16px;border-radius:9px;color:#fff;font-weight:600;z-index:99}
+#msg.ok{background:var(--grn)}#msg.er{background:var(--red)}
+.empty{text-align:center;padding:30px;color:var(--mu)}
+@media(max-width:800px){aside{display:none}.lr{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<aside><h1>⚙️ Error MES<small>Smart Machine Error Database</small></h1>
+<div class="nv on" data-v="cat" onclick="nav('cat')">📝 Catat Error</div><div class="nv" data-v="mes" onclick="nav('mes')">🗂️ Error MES</div>
+</aside>
+<main>
+<section id="v-cat"><div class="crumb">Beranda / Catat Error</div><h2>Catat Error</h2>
+<div id="form"></div>
+<div class="card"><h3>Foto Error</h3><input type="file" id="ph" accept="image/jpeg,image/png,image/webp" multiple onchange="addPh(this)"><p class="mu" style="margin:6px 0">JPG/PNG/WEBP, maks 5 MB per foto.</p><div class="th" id="phl"></div></div>
+<div class="card"><h3>Link Referensi</h3><div id="lkl"></div><button class="btn g" onclick="addLk()">+ Tambah Link</button></div>
+<div class="bar"><button class="btn" id="sv" onclick="save()">💾 Simpan Error</button><button class="btn g" onclick="prevForm()">👁️ Preview Dokumentasi</button><button class="btn g" onclick="resetForm()">Reset Form</button></div></section>
+
+<section id="v-mes" class="hide"><div class="crumb">Beranda / Error MES</div><h2>Error MES</h2>
+<div class="card"><label>🔍 Smart Search (gejala, kode, mesin, penyebab, solusi…)</label><input id="q" placeholder="cth: servo tidak bergerak / AL-52" onkeydown="if(event.key==='Enter')apply()">
+<div class="g2" style="margin-top:12px">
+<div><label>Kategori</label><select id="f-cat"></select></div><div><label>Nama mesin</label><input id="f-mc"></div><div><label>Lokasi / Line</label><input id="f-ln"></div>
+<div><label>Kode error</label><input id="f-cd"></div><div><label>Status</label><select id="f-st"><option value="">Semua</option><option>Open</option><option>In Progress</option><option>Resolved</option></select></div>
+<div><label>Tanggal awal</label><input type="date" id="f-d1"></div><div><label>Tanggal akhir</label><input type="date" id="f-d2"></div></div>
+<div class="bar"><button class="btn" onclick="apply()">Terapkan Filter</button><button class="btn g" onclick="resetF()">Reset Filter</button></div></div>
+<div class="card" id="lst"></div><div class="bar" id="pg" style="justify-content:center"></div></section>
+
+<section id="v-det" class="hide"></section>
+</main>
+<div id="msg" class="hide"></div>
+
+<script>
+/* ===== KONFIGURASI: isi dengan URL & publishable/anon key project Supabase Anda (JANGAN service_role) ===== */
+const SUPABASE_URL='https://ngiiqkhcigcnolgmttet.supabase.co', SUPABASE_KEY='sb_publishable_DwDJFaJXAtScfghhl7_RmA_Ex_cMmgY';
+const BUCKET='error-attachments', MAXB=5*1024*1024, PER=10;
+const CATS=['Electrical','Mechanical','PLC','Sensor','Pneumatic','Hydraulic','Robot','Machine Vision','Network / Communication','Servo / Inverter','Other'];
+const FIELDS=[['Informasi Utama',[['title','Judul Error *','i'],['error_code','Kode Error','i'],['machine_name','Nama Mesin','i'],['production_line','Lokasi / Line Produksi','i'],['category','Kategori','c'],['occurred_at','Tanggal & Waktu Kejadian','d'],['status','Status Penanganan','s']]],
+['Deskripsi Error',[['description','Deskripsi Error','t'],['symptoms','Gejala yang Ditemukan','t'],['alarm_message','Alarm / Pesan HMI / Controller','t']]],
+['Analisis dan Solusi',[['cause_analysis','Analisis Penyebab','t'],['possible_causes','Kemungkinan Penyebab Lain','t'],['troubleshooting_steps','Langkah Troubleshooting','t'],['inspection_results','Hasil Pemeriksaan','t'],['solution','Solusi Perbaikan','t'],['verification_results','Hasil Setelah Perbaikan','t'],['additional_notes','Catatan Tambahan','t']]]];
+const LBL={};FIELDS.forEach(s=>s[1].forEach(f=>LBL[f[0]]=f[1].replace(' *','')));
+const SYN=[['servo','motor','drive'],['berhenti','stop','mati','macet'],['tidak','gak','tak'],['bergerak','jalan','gerak'],['error','alarm','fault','gagal'],['encoder','enkoder'],['sensor','proximity','sensing'],['kabel','cable','konektor']];
+let db,PH=[],LK=[],page=0,TOT=0;
+const $=i=>document.getElementById(i), esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function msg(t,ok){const m=$('msg');m.textContent=t;m.className=ok?'ok':'er';clearTimeout(m._t);m._t=setTimeout(()=>m.className='hide',ok?3500:8000)}
+function init(){
+  if(SUPABASE_URL.startsWith('ISI_')){document.body.innerHTML='<div style="margin:60px auto;max-width:520px" class="card"><h2>Konfigurasi belum diisi</h2><p>Buka file ini, isi <b>SUPABASE_URL</b> dan <b>SUPABASE_KEY</b> di bagian atas &lt;script&gt;, lalu jalankan <b>setup.sql</b> di Supabase SQL Editor.</p></div>';return}
+  db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  $('form').innerHTML=FIELDS.map(s=>'<div class="card"><h3>'+s[0]+'</h3><div class="g2">'+s[1].map(f=>{const[k,l,t]=f;let h;
+    if(t==='c')h='<select id="e-'+k+'"><option value="">— pilih —</option>'+CATS.map(c=>'<option>'+c+'</option>').join('')+'</select>';
+    else if(t==='s')h='<select id="e-'+k+'"><option>Open</option><option>In Progress</option><option>Resolved</option></select>';
+    else if(t==='d')h='<input type="datetime-local" id="e-'+k+'">';
+    else if(t==='t')h='<textarea id="e-'+k+'"></textarea>';else h='<input id="e-'+k+'">';
+    return '<div style="'+(t==='t'?'grid-column:1/-1':'')+'"><label>'+l+'</label>'+h+'</div>'}).join('')+'</div></div>').join('');
+  $('f-cat').innerHTML='<option value="">Semua</option>'+CATS.map(c=>'<option>'+c+'</option>').join('');
+  addLk();
+  nav('cat');
+}
+function nav(v){['cat','mes','det'].forEach(x=>$('v-'+x).classList.toggle('hide',x!==v));
+  document.querySelectorAll('.nv').forEach(n=>n.classList.toggle('on',n.dataset.v===(v==='det'?'mes':v)));if(v==='mes')load()}
+
+/* ===== CATAT ERROR ===== */
+function addPh(inp){for(const f of inp.files){
+  if(!/^image\/(jpeg|png|webp)$/.test(f.type)){msg('"'+f.name+'" bukan JPG/PNG/WEBP.');continue}
+  if(f.size>MAXB){msg('"'+f.name+'" melebihi 5 MB.');continue}
+  PH.push({file:f,caption:'',url:URL.createObjectURL(f)})}inp.value='';rPh()}
+function rPh(){$('phl').innerHTML=PH.map((p,i)=>'<div><button class="x" onclick="PH.splice('+i+',1);rPh()">×</button><img src="'+p.url+'"><input placeholder="Keterangan foto" value="'+esc(p.caption)+'" oninput="PH['+i+'].caption=this.value"></div>').join('')}
+function addLk(){LK.push({url:'',title:'',caption:''});rLk()}
+function rLk(){$('lkl').innerHTML=LK.map((l,i)=>'<div class="lr"><input placeholder="https://…" value="'+esc(l.url)+'" oninput="LK['+i+'].url=this.value"><input placeholder="Judul referensi" value="'+esc(l.title)+'" oninput="LK['+i+'].title=this.value"><input placeholder="Keterangan" value="'+esc(l.caption)+'" oninput="LK['+i+'].caption=this.value"><button class="btn r" onclick="LK.splice('+i+',1);rLk()">×</button></div>').join('')}
+function vUrl(u){try{const x=new URL(u);return x.protocol==='http:'||x.protocol==='https:'}catch(e){return false}}
+function formData(){const o={};FIELDS.forEach(s=>s[1].forEach(f=>{let v=$('e-'+f[0]).value.trim();if(f[0]==='occurred_at')v=v?new Date(v).toISOString():null;o[f[0]]=v===''?null:v}));return o}
+function resetForm(){FIELDS.forEach(s=>s[1].forEach(f=>{const e=$('e-'+f[0]);e.value=f[0]==='status'?'Open':''}));PH=[];LK=[];rPh();addLk()}
+async function save(){const o=formData();if(!o.title)return msg('Judul Error wajib diisi.');o.status=o.status||'Open';
+  const lks=LK.filter(l=>l.url.trim());for(const l of lks)if(!vUrl(l.url.trim()))return msg('URL tidak valid: '+l.url);
+  const b=$('sv');b.disabled=true;b.textContent='Menyimpan…';let id=null,up=[];
+  try{
+    const r=await db.from('machine_errors').insert(o).select('id').single();if(r.error)throw r.error;id=r.data.id;
+    const rows=[];
+    for(let i=0;i<PH.length;i++){const p=PH[i],ext=(p.file.name.split('.').pop()||'jpg').replace(/[^a-z0-9]/gi,'').toLowerCase();
+      const path=id+'/'+Date.now()+'-'+i+'.'+ext;
+      const u=await db.storage.from(BUCKET).upload(path,p.file,{contentType:p.file.type});if(u.error)throw new Error('Upload foto "'+p.file.name+'" gagal: '+u.error.message);
+      up.push(path);rows.push({error_id:id,attachment_type:'image',file_path:path,title:p.file.name,caption:p.caption||null})}
+    lks.forEach(l=>rows.push({error_id:id,attachment_type:'link',url:l.url.trim(),title:l.title||null,caption:l.caption||null}));
+    if(rows.length){const a=await db.from('error_attachments').insert(rows);if(a.error)throw a.error}
+    msg('Tersimpan. ID Error: '+id.slice(0,8).toUpperCase()+' ('+id+')',true);resetForm();
+  }catch(e){
+    if(up.length)await db.storage.from(BUCKET).remove(up);
+    if(id)await db.from('machine_errors').delete().eq('id',id);
+    msg('Gagal menyimpan (form tidak dikosongkan): '+(e.message||e));
+  }b.disabled=false;b.textContent='💾 Simpan Error'}
+async function prevForm(){const o=formData();if(!o.title)return msg('Isi minimal Judul Error.');
+  const imgs=PH.map(p=>({src:p.url,caption:p.caption,title:p.file.name}));
+  const d=await mkPdf(o,imgs,LK.filter(l=>vUrl(l.url.trim())),'(draft)');if(d)window.open(d.output('bloburl'))}
+
+/* ===== ERROR MES ===== */
+function tsq(raw){const w=(raw.toLowerCase().match(/[a-z0-9]+/g)||[]).filter(x=>x.length>1||/\d/.test(x));if(!w.length)return '';
+  const s=new Set(w);w.forEach(x=>SYN.forEach(g=>{if(g.includes(x))g.forEach(y=>s.add(y))}));return [...s].map(x=>x+':*').join(' | ')}
+function apply(){page=0;load()}
+function resetF(){['q','f-cat','f-mc','f-ln','f-cd','f-st','f-d1','f-d2'].forEach(i=>$(i).value='');apply()}
+async function load(){$('lst').innerHTML='<div class="empty">Memuat…</div>';const raw=$('q').value.trim();
+  const r=await db.rpc('search_errors',{p_q:tsq(raw),p_raw:raw,p_cat:$('f-cat').value,p_machine:$('f-mc').value.trim(),p_line:$('f-ln').value.trim(),p_status:$('f-st').value,p_code:$('f-cd').value.trim(),p_from:$('f-d1').value||null,p_to:$('f-d2').value||null,p_limit:PER,p_offset:page*PER});
+  if(r.error){$('lst').innerHTML='<div class="empty" style="color:var(--red)">Gagal memuat: '+esc(r.error.message)+'<br>Pastikan setup.sql sudah dijalankan.</div>';return}
+  const d=r.data;TOT=d.length?Number(d[0].total):0;
+  if(!d.length){$('lst').innerHTML='<div class="empty">Tidak ditemukan dokumentasi error yang cocok. Silakan periksa kata kunci atau catat error baru melalui menu Catat Error.<div class="bar" style="justify-content:center"><button class="btn" onclick="nav(\'cat\')">Ke Catat Error</button></div></div>';$('pg').innerHTML='';return}
+  $('lst').innerHTML='<table><tr><th>ID</th><th>Error</th><th>Mesin / Line</th><th>Kategori</th><th>Tanggal</th><th>Status</th><th></th></tr>'+d.map(e=>
+   '<tr><td class="mu">'+e.id.slice(0,8).toUpperCase()+'</td><td><b>'+esc(e.title)+'</b> '+(e.error_code?'<span class="tg">'+esc(e.error_code)+'</span>':'')
+   +(raw?'<div class="sn"><b>Gejala:</b> '+esc((e.symptoms||'—').slice(0,140))+'<br><b>Penyebab terdokumentasi:</b> '+esc((e.cause_analysis||'—').slice(0,140))+'<br><b>Solusi sebelumnya:</b> '+esc((e.solution||'—').slice(0,140))+'<br><span class="mu">Skor kecocokan: '+Number(e.rank).toFixed(2)+' · verifikasi dulu pada kondisi mesin saat ini</span></div>':'')
+   +'</td><td>'+esc(e.machine_name||'—')+'<div class="mu">'+esc(e.production_line||'')+'</div></td><td>'+esc(e.category||'—')+'</td><td>'+(e.occurred_at?new Date(e.occurred_at).toLocaleDateString('id-ID'):'—')+'</td><td><span class="tg '+(e.status==='In Progress'?'In':e.status)+'">'+e.status+'</span></td>'
+   +'<td style="white-space:nowrap"><button class="btn g" onclick="detail(\''+e.id+'\')">Detail</button> <button class="btn g" onclick="pdfOf(\''+e.id+'\',0)">Preview PDF</button> <button class="btn g" onclick="pdfOf(\''+e.id+'\',1)">⬇ PDF</button></td></tr>').join('')+'</table>';
+  const n=Math.ceil(TOT/PER);$('pg').innerHTML='<button class="btn g" '+(page?'':'disabled')+' onclick="page--;load()">‹</button><span class="mu" style="align-self:center">Halaman '+(page+1)+' / '+n+' · '+TOT+' data</span><button class="btn g" '+(page+1<n?'':'disabled')+' onclick="page++;load()">›</button>'}
+async function full(id){const e=await db.from('machine_errors').select('*').eq('id',id).single();if(e.error)throw e.error;
+  const a=await db.from('error_attachments').select('*').eq('error_id',id).order('created_at');if(a.error)throw a.error;
+  const imgs=[],lks=[];for(const x of a.data){if(x.attachment_type==='link')lks.push(x);else{
+    const s=await db.storage.from(BUCKET).createSignedUrl(x.file_path,3600);imgs.push({src:s.data?s.data.signedUrl:null,caption:x.caption,title:x.title})}}
+  return{e:e.data,imgs,lks}}
+async function detail(id){nav('det');const v=$('v-det');v.innerHTML='<div class="empty">Memuat…</div>';
+  try{const{e,imgs,lks}=await full(id);
+  v.innerHTML='<div class="crumb">Beranda / Error MES / Detail</div><h2>'+esc(e.title)+(e.error_code?' <span class="tg">'+esc(e.error_code)+'</span>':'')+'</h2><div class="bar" style="margin:0 0 12px"><button class="btn g" onclick="nav(\'mes\')">← Kembali ke Error MES</button><button class="btn g" onclick="pdfOf(\''+id+'\',0)">Preview PDF</button><button class="btn" onclick="pdfOf(\''+id+'\',1)">Download PDF</button></div><div class="card"><dl class="dt"><dt>ID</dt><dd>'+id+'</dd>'
+   +Object.keys(LBL).filter(k=>k!=='title'&&k!=='error_code').map(k=>{let v=e[k];if(k==='occurred_at'&&v)v=new Date(v).toLocaleString('id-ID');return v?'<dt>'+LBL[k]+'</dt><dd>'+esc(v)+'</dd>':''}).join('')
+   +'</dl></div>'+(imgs.length?'<div class="card"><h3>Foto</h3><div class="th">'+imgs.map(i=>'<div style="width:240px">'+(i.src?'<a href="'+i.src+'" target="_blank"><img src="'+i.src+'" style="height:160px"></a>':'<span class="mu">Foto tidak dapat diakses</span>')+'<div class="mu">'+esc(i.caption||'')+'</div></div>').join('')+'</div></div>':'')
+   +(lks.length?'<div class="card"><h3>Link Referensi</h3>'+lks.map(l=>'<p><a href="'+esc(l.url)+'" target="_blank" rel="noopener">'+esc(l.title||l.url)+'</a><br><span class="mu">'+esc(l.caption||'')+'</span></p>').join('')+'</div>':'');
+  }catch(x){v.innerHTML='<div class="empty" style="color:var(--red)">Gagal memuat: '+esc(x.message)+'</div>'}}
+
+/* ===== PDF ===== */
+function loadImg(src){return new Promise((ok,no)=>{fetch(src).then(r=>{if(!r.ok)throw 0;return r.blob()}).then(b=>{const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>ok({d:fr.result,w:im.width,h:im.height,t:b.type.includes('png')?'PNG':b.type.includes('webp')?'WEBP':'JPEG'});im.onerror=no;im.src=fr.result};fr.readAsDataURL(b)}).catch(no)})}
+async function mkPdf(e,imgs,lks,idTxt){const{jsPDF}=window.jspdf;const d=new jsPDF({unit:'mm',format:'a4'}),W=210,M=15,CW=W-2*M;let y=0,fail=[];
+  const brk=h=>{if(y+h>285){d.addPage();y=20}};
+  d.setFillColor(18,48,90);d.rect(0,0,W,16,'F');d.setTextColor(255);d.setFontSize(12);d.setFont('helvetica','bold');d.text('ERROR MES — Dokumentasi Error Mesin',M,10);y=26;d.setTextColor(20);
+  d.setFontSize(16);const t=d.splitTextToSize(e.title,CW);d.text(t,M,y);y+=t.length*7+2;
+  const meta=[['Kode Error',e.error_code],['ID Dokumentasi',idTxt],['Nama Mesin',e.machine_name],['Lokasi / Line',e.production_line],['Kategori',e.category],['Tanggal Kejadian',e.occurred_at?new Date(e.occurred_at).toLocaleString('id-ID'):''],['Status',e.status]];
+  d.setFontSize(10);meta.forEach(m=>{brk(6);d.setFont('helvetica','bold');d.text(m[0],M,y);d.setFont('helvetica','normal');d.text(': '+(m[1]||'-'),M+38,y,{maxWidth:CW-38});y+=6});
+  const sec=(h,txt)=>{brk(14);y+=3;d.setFont('helvetica','bold');d.setFontSize(11);d.setTextColor(18,48,90);d.text(h,M,y);y+=5.5;d.setTextColor(20);d.setFont('helvetica','normal');d.setFontSize(10);
+    d.splitTextToSize(txt||'-',CW).forEach(l=>{brk(5);d.text(l,M,y);y+=4.7})};
+  sec('Deskripsi Error',e.description);sec('Gejala yang Ditemukan',e.symptoms);if(e.alarm_message)sec('Alarm / Pesan',e.alarm_message);
+  brk(14);y+=3;d.setFont('helvetica','bold');d.setFontSize(11);d.setTextColor(18,48,90);d.text('Foto Error',M,y);y+=6;d.setTextColor(20);
+  if(!imgs.length){d.setFont('helvetica','normal');d.setFontSize(10);d.text('-',M,y);y+=5}
+  for(const im of imgs){try{if(!im.src)throw 0;const L=await loadImg(im.src);let w=CW,h=w*L.h/L.w;if(h>95){h=95;w=h*L.w/L.h}brk(h+10);d.addImage(L.d,L.t,M,y,w,h);y+=h+4;
+    d.setFontSize(9);d.setFont('helvetica','italic');d.text(d.splitTextToSize(im.caption||im.title||'',CW),M,y);y+=6}catch(x){fail.push(im.title||'foto')}}
+  brk(14);y+=3;d.setFont('helvetica','bold');d.setFontSize(11);d.setTextColor(18,48,90);d.text('Link Referensi',M,y);y+=5.5;d.setTextColor(20);d.setFontSize(10);
+  if(!lks.length){d.setFont('helvetica','normal');d.text('-',M,y);y+=5}
+  lks.forEach(l=>{brk(11);d.setFont('helvetica','normal');d.setTextColor(29,78,216);d.textWithLink(l.title||l.url,M,y,{url:l.url});y+=4.7;d.setTextColor(20);if(l.caption){d.splitTextToSize(l.caption,CW).forEach(s=>{brk(5);d.text(s,M,y);y+=4.5})}y+=1.5});
+  sec('Analisis Penyebab',e.cause_analysis);sec('Kemungkinan Penyebab Lain',e.possible_causes);sec('Langkah Troubleshooting',e.troubleshooting_steps);sec('Hasil Pemeriksaan',e.inspection_results);sec('Solusi Perbaikan',e.solution);sec('Hasil Setelah Perbaikan',e.verification_results);sec('Catatan Tambahan',e.additional_notes);
+  const n=d.getNumberOfPages();for(let i=1;i<=n;i++){d.setPage(i);d.setFontSize(8);d.setTextColor(120);d.text('Halaman '+i+' / '+n,W-M,292,{align:'right'})}
+  if(fail.length)alert('Peringatan: foto berikut tidak dapat dimuat dan TIDAK masuk PDF:\n- '+fail.join('\n- '));
+  return d}
+async function pdfOf(id,dl){try{msg('Menyiapkan PDF…',true);const{e,imgs,lks}=await full(id);const d=await mkPdf(e,imgs,lks,id.slice(0,8).toUpperCase());
+  if(dl)d.save((e.error_code?e.error_code+' - ':'')+e.title.replace(/[\\/:*?"<>|]/g,'')+'.pdf');else window.open(d.output('bloburl'))}catch(x){msg('PDF gagal: '+(x.message||x))}}
+init();
+</script>
+</body>
+</html>
