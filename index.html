@@ -34,7 +34,7 @@ td{padding:9px 8px;border-bottom:1px solid var(--bd);vertical-align:top}
 .th img{width:100%;height:110px;object-fit:cover;border-radius:5px}.th .x{position:absolute;top:2px;right:2px;background:var(--red);color:#fff;border:0;border-radius:50%;width:22px;height:22px;cursor:pointer}
 .pf{position:relative;border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:12px;max-width:600px;background:#fff}.pf b{display:block;margin-bottom:6px;color:var(--nav)}.pf img{width:100%;max-height:380px;object-fit:contain;background:var(--bg);border-radius:6px;display:block}.pf label{margin-top:8px}.pf .x{position:absolute;top:8px;right:8px;background:var(--red);color:#fff;border:0;border-radius:50%;width:26px;height:26px;cursor:pointer;z-index:2}
 #toasts{position:fixed;left:18px;bottom:18px;display:flex;flex-direction:column;gap:8px;z-index:98}.tt{position:relative;overflow:hidden;background:#1b2433;color:#fff;border-radius:9px;padding:12px 14px 15px;display:flex;gap:14px;align-items:center;box-shadow:0 6px 18px rgba(0,0,0,.3);max-width:440px}.tt button{background:none;border:0;color:#60a5fa;font-weight:800;cursor:pointer;font-size:13px;white-space:nowrap}.tt i{position:absolute;left:0;bottom:0;height:3px;background:#60a5fa;animation:tt 10s linear forwards}@keyframes tt{from{width:100%}to{width:0}}
-#login{position:fixed;inset:0;background:var(--nav);display:flex;align-items:center;justify-content:center;z-index:50}#login .card{width:360px;text-align:center}#login p{margin:6px 0 16px}.gbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:11px;border:1px solid var(--bd);border-radius:8px;background:#fff;font-weight:700;font-size:14px;cursor:pointer;color:#3c4043}.gbtn:hover{background:#f6f8fb}#usr{position:absolute;bottom:14px;left:12px;right:12px;font-size:12px}#usr span{display:block;opacity:.75;word-break:break-all;margin-bottom:6px}#usr b{cursor:pointer;text-decoration:underline}
+#login,#gate{position:fixed;inset:0;background:var(--nav);display:flex;align-items:center;justify-content:center;z-index:50}#gate{z-index:55}#login .card,#gate .card{width:380px;max-width:92vw;text-align:center}#login p,#gate p{margin:8px 0 16px}#gate .bar{justify-content:center}.badge{background:#fff;color:var(--nav);border-radius:99px;padding:1px 7px;font-size:11px;margin-left:4px}.gbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:11px;border:1px solid var(--bd);border-radius:8px;background:#fff;font-weight:700;font-size:14px;cursor:pointer;color:#3c4043}.gbtn:hover{background:#f6f8fb}#usr{position:absolute;bottom:14px;left:12px;right:12px;font-size:12px}#usr span{display:block;opacity:.75;word-break:break-all;margin-bottom:6px}#usr b{cursor:pointer;text-decoration:underline}
 .lr{display:grid;grid-template-columns:2fr 1.5fr 2fr auto;gap:8px;margin-bottom:8px}
 .dt dt{font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;margin-top:12px}.dt dd{white-space:pre-wrap;margin-top:2px}
 #msg{position:fixed;bottom:18px;right:18px;max-width:380px;padding:12px 16px;border-radius:9px;color:#fff;font-weight:600;z-index:99}
@@ -46,8 +46,9 @@ td{padding:9px 8px;border-bottom:1px solid var(--bd);vertical-align:top}
 <body>
 <div id="login" class="hide"><div class="card"><h2>⚙️ Error MES</h2><p class="mu">Masuk menggunakan akun Google Anda.</p>
 <button class="gbtn" onclick="googleLogin()"><svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.6 5.9c4.4-4.1 7-10.1 7-17.6z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.4-.8-3-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C.9 16.5 0 20.1 0 24s.9 7.5 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.6-5.9c-2.1 1.4-4.9 2.3-8.3 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>Masuk dengan Google</button></div></div>
+<div id="gate" class="hide"><div class="card" id="gate-c"></div></div>
 <aside><h1>⚙️ Error MES<small>Smart Machine Error Database</small></h1>
-<div class="nv on" data-v="cat" onclick="nav('cat')">📝 Catat Error</div><div class="nv" data-v="mes" onclick="nav('mes')">🗂️ Error MES</div><div class="nv" data-v="trash" onclick="nav('trash')">🗑️ Tempat Sampah</div>
+<div class="nv on" data-v="cat" onclick="nav('cat')">📝 Catat Error</div><div class="nv" data-v="mes" onclick="nav('mes')">🗂️ Error MES</div><div class="nv" data-v="trash" onclick="nav('trash')">🗑️ Tempat Sampah</div><div class="nv hide" id="nv-acc" data-v="acc" onclick="nav('acc')">👤 Akun <span id="pbadge" class="badge hide"></span></div>
 <div id="usr"><span id="usr-e"></span><b onclick="logout()">Keluar</b></div></aside>
 <main>
 <section id="v-cat"><div class="crumb">Beranda / Catat Error</div><h2>Catat Error</h2>
@@ -69,6 +70,7 @@ td{padding:9px 8px;border-bottom:1px solid var(--bd);vertical-align:top}
 <div class="card" id="lst"></div><div class="bar" id="pg" style="justify-content:center"></div></section>
 
 <section id="v-trash" class="hide"></section>
+<section id="v-acc" class="hide"></section>
 <section id="v-det" class="hide"></section>
 </main>
 <div id="msg" class="hide"></div><div id="toasts"></div>
@@ -100,11 +102,42 @@ function init(){
   db.auth.getSession().then(r=>{if(r.data.session)enter(r.data.session);else $('login').classList.remove('hide')});
   db.auth.onAuthStateChange((ev,ses)=>{if(ev==='SIGNED_OUT')location.reload();else if(ev==='SIGNED_IN'&&$('login').classList.contains('hide')===false)enter(ses)});
 }
-function enter(ses){$('login').classList.add('hide');$('usr-e').textContent=(ses&&ses.user&&ses.user.email)||'';nav('cat');purgeExpired()}
+let GT=null;
+function gate(st,info){const c=$('gate-c');$('gate').classList.remove('hide');
+  const out='<button class="btn g" onclick="logout()">Keluar</button>';
+  if(st==='pending'){c.innerHTML='<h2>⏳ Menunggu Persetujuan</h2><p>Akun <b>'+esc(info)+'</b> sudah terdaftar. Master perlu menyetujui dulu sebelum Anda bisa memakai Error MES. Halaman ini memeriksa ulang otomatis.</p><div class="bar"><button class="btn" onclick="recheck()">Cek sekarang</button>'+out+'</div>';if(!GT)GT=setInterval(recheck,10000)}
+  else if(st==='rejected'){clearInterval(GT);GT=null;c.innerHTML='<h2>⛔ Akses Ditolak</h2><p>Akun <b>'+esc(info)+'</b> tidak diizinkan oleh master.</p><div class="bar">'+out+'</div>'}
+  else{clearInterval(GT);GT=null;c.innerHTML='<h2>⚠️ Gagal</h2><p>'+esc(info)+'</p><div class="bar">'+out+'</div>'}}
+function recheck(){db.auth.getSession().then(r=>{if(r.data.session)enter(r.data.session)})}
+async function enter(ses){$('login').classList.add('hide');const em=(ses&&ses.user&&ses.user.email)||'';$('usr-e').textContent=em;
+  const r=await db.rpc('register_me');
+  if(r.error||!r.data||!r.data.length){gate('err','Gagal memeriksa izin akun: '+(r.error?r.error.message:'data kosong')+'. Pastikan master.sql sudah dijalankan.');return}
+  const u=r.data[0];if(u.status!=='approved'){gate(u.status,em);return}
+  clearInterval(GT);GT=null;$('gate').classList.add('hide');
+  if(u.role==='master'){$('nv-acc').classList.remove('hide');pend()}
+  nav('cat');purgeExpired()}
+async function pend(){const r=await db.from('app_users').select('email',{count:'exact',head:true}).eq('status','pending');const b=$('pbadge');b.textContent=r.count||'';b.classList.toggle('hide',!r.count)}
+async function loadAcc(){const v=$('v-acc');
+  const head='<div class="crumb">Beranda / Akun</div><h2>Akun & Perizinan</h2><p class="mu" style="margin-bottom:12px">Akun Google yang login harus Anda setujui dulu sebelum bisa memakai Error MES.</p>';
+  const r=await db.from('app_users').select('*').order('requested_at',{ascending:false});
+  if(r.error){v.innerHTML=head+'<div class="card empty" style="color:var(--red)">Gagal memuat: '+esc(r.error.message)+'</div>';return}
+  const B=(c,l,e,a)=>'<button class="btn '+c+'" data-e="'+esc(e)+'" onclick="'+a+'">'+l+'</button> ';
+  const row=u=>{let b='',t='';
+    if(u.role==='master'){t='<span class="tg Resolved">Master</span>'}
+    else if(u.status==='pending'){t='<span class="tg In">Menunggu</span>';b=B('','✅ Terima',u.email,"accSet(this.dataset.e,'approved','pending')")+B('r','Tolak',u.email,"accSet(this.dataset.e,'rejected','pending')")}
+    else if(u.status==='approved'){t='<span class="tg Resolved">Diterima</span>';b=B('r','Cabut Akses',u.email,"accSet(this.dataset.e,'rejected','approved')")}
+    else{t='<span class="tg Open">Ditolak</span>';b=B('','✅ Terima',u.email,"accSet(this.dataset.e,'approved','rejected')")+B('r','🗑️ Hapus dari daftar',u.email,"accDel(this.dataset.e)")}
+    return '<tr><td><b>'+esc(u.email)+'</b><div class="mu">'+esc(u.name||'')+'</div></td><td>'+t+'</td><td>'+new Date(u.requested_at).toLocaleDateString('id-ID')+'</td><td style="white-space:nowrap">'+b+'</td></tr>'};
+  const ord={pending:0,approved:1,rejected:2};const d=r.data.slice().sort((a,b)=>(a.role==='master'?-1:0)-(b.role==='master'?-1:0)||ord[a.status]-ord[b.status]);
+  v.innerHTML=head+'<div class="card"><table><tr><th>Akun Google</th><th>Status</th><th>Daftar</th><th></th></tr>'+d.map(row).join('')+'</table></div>'}
+async function accSet(email,st,prev){const r=await db.from('app_users').update({status:st,decided_at:new Date().toISOString()}).eq('email',email);if(r.error)return msg('Gagal: '+r.error.message);loadAcc();pend();
+  toast(email+(st==='approved'?' diterima':' ditolak / akses dicabut'),async()=>{await db.from('app_users').update({status:prev}).eq('email',email);loadAcc();pend()})}
+async function accDel(email){const g=await db.from('app_users').select('*').eq('email',email).single();const r=await db.from('app_users').delete().eq('email',email);if(r.error)return msg('Gagal: '+r.error.message);loadAcc();pend();
+  toast(email+' dihapus dari daftar',async()=>{await db.from('app_users').insert(g.data);loadAcc();pend()})}
 function googleLogin(){db.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}}).then(r=>{if(r.error)msg('Login Google gagal: '+r.error.message)})}
 function logout(){db.auth.signOut().then(()=>location.reload())}
-function nav(v){['cat','mes','det','trash'].forEach(x=>$('v-'+x).classList.toggle('hide',x!==v));
-  document.querySelectorAll('.nv').forEach(n=>n.classList.toggle('on',n.dataset.v===(v==='det'?'mes':v)));if(v==='mes')load();if(v==='cat')esearch();if(v==='trash')loadTrash()}
+function nav(v){['cat','mes','det','trash','acc'].forEach(x=>$('v-'+x).classList.toggle('hide',x!==v));
+  document.querySelectorAll('.nv').forEach(n=>n.classList.toggle('on',n.dataset.v===(v==='det'?'mes':v)));if(v==='mes')load();if(v==='cat')esearch();if(v==='trash')loadTrash();if(v==='acc')loadAcc()}
 
 /* ===== CATAT ERROR ===== */
 function addPh(inp){for(const f of inp.files){
