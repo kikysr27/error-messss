@@ -158,7 +158,7 @@ function init(){
   db.auth.getSession().then(r=>{if(r.data.session)enter(r.data.session);else $('login').classList.remove('hide')});
   db.auth.onAuthStateChange((ev,ses)=>{if(ev==='SIGNED_OUT')location.reload();else if(ev==='SIGNED_IN'&&$('login').classList.contains('hide')===false)enter(ses)});
 }
-let GT=null,ROLE='user',IS_ADM=false,IS_OWN=false;
+let GT=null,ROLE='user',IS_ADM=false,IS_OWN=false,WM='';
 function gate(st,info){const c=$('gate-c');$('gate').classList.remove('hide');
   const out='<button class="btn g" onclick="logout()">Keluar</button>';
   if(st==='pending'){c.innerHTML='<h2>⏳ Menunggu Persetujuan</h2><p>Akun <b>'+esc(info)+'</b> sudah terdaftar. Master perlu menyetujui dulu dan menentukan peran Anda (Admin Master atau User) sebelum Anda bisa masuk. Halaman ini memeriksa ulang otomatis.</p><div class="bar"><button class="btn" onclick="recheck()">Cek sekarang</button>'+out+'</div>';if(!GT)GT=setInterval(recheck,10000)}
@@ -170,7 +170,7 @@ async function enter(ses){$('login').classList.add('hide');const em=(ses&&ses.us
   if(r.error||!r.data||!r.data.length){gate('err','Gagal memeriksa izin akun: '+(r.error?r.error.message:'data kosong')+'. Pastikan master.sql sudah dijalankan.');return}
   const u=r.data[0];if(u.status!=='approved'){gate(u.status,em);return}
   clearInterval(GT);GT=null;$('gate').classList.add('hide');
-  ROLE=u.role==='master'?'master':(u.role==='admin'?'admin':'user');IS_OWN=ROLE==='master';IS_ADM=ROLE!=='user';
+  ROLE=u.role==='master'?'master':(u.role==='admin'?'admin':'user');IS_OWN=ROLE==='master';IS_ADM=ROLE!=='user';WM=IS_ADM?'':em; /* User biasa: PDF diberi watermark email. Ganti ke WM=em agar Admin juga */
   document.body.classList.toggle('ru',!IS_ADM);
   const RL={master:'Master Utama',admin:'Admin Master',user:'User'}[ROLE];$('usr-e').innerHTML=esc(em)+'<span class="rl">'+RL+'</span>';
   if(IS_ADM){$('nv-acc').classList.remove('hide');pend();nav('cat');purgeExpired()}else nav('mes')}
@@ -190,14 +190,14 @@ async function loadAcc(){const v=$('v-acc');
     return '<tr><td><b>'+esc(u.email)+'</b><div class="mu">'+esc(u.name||'')+'</div></td><td>'+t+'</td><td>'+c+'</td><td>'+new Date(u.requested_at).toLocaleDateString('id-ID')+'</td><td style="white-space:nowrap">'+b+'</td></tr>'};
   const ord={pending:0,approved:1,rejected:2};const d=r.data.slice().sort((a,b)=>(a.role==='master'?-1:0)-(b.role==='master'?-1:0)||ord[a.status]-ord[b.status]);
   v.innerHTML=head+'<div class="card"><table><tr><th>Akun Google</th><th>Status</th><th>Hak Akses</th><th>Daftar</th><th></th></tr>'+d.map(row).join('')+'</table></div>'}
-async function accSet(email,st,prev){const r=await db.rpc('set_status',{p_email:email,p_status:st});if(r.error)return msg('Gagal: '+r.error.message);loadAcc();pend();
+async function accSet(email,st,prev){if(!IS_ADM){return}const r=await db.rpc('set_status',{p_email:email,p_status:st});if(r.error)return msg('Gagal: '+r.error.message);loadAcc();pend();
   toast(email+(st==='approved'?' diterima':' ditolak / akses dicabut'),async()=>{await db.rpc('set_status',{p_email:email,p_status:prev});loadAcc();pend()})}
-async function accOk(email,adm){const r=await db.rpc('set_status',{p_email:email,p_status:'approved'});if(r.error)return msg('Gagal: '+r.error.message);
+async function accOk(email,adm){if(!IS_ADM){return}const r=await db.rpc('set_status',{p_email:email,p_status:'approved'});if(r.error)return msg('Gagal: '+r.error.message);
   if(adm){const r2=await db.rpc('set_admin',{p_email:email,p_on:true});if(r2.error){msg('Diterima sebagai User, tapi gagal jadi Admin Master: '+r2.error.message)}}
   loadAcc();pend();toast(email+(adm?' diterima sebagai Admin Master':' diterima sebagai User'),async()=>{if(adm)await db.rpc('set_admin',{p_email:email,p_on:false});await db.rpc('set_status',{p_email:email,p_status:'pending'});loadAcc();pend()})}
-async function accDel(email){const g=await db.from('app_users').select('*').eq('email',email).single();const r=await db.rpc('del_user',{p_email:email});if(r.error)return msg('Gagal: '+r.error.message);loadAcc();pend();
+async function accDel(email){if(!IS_ADM){return}const g=await db.from('app_users').select('*').eq('email',email).single();const r=await db.rpc('del_user',{p_email:email});if(r.error)return msg('Gagal: '+r.error.message);loadAcc();pend();
   toast(email+' dihapus dari daftar',async()=>{if(g.data)await db.rpc('readd_user',{p:g.data});loadAcc();pend()})}
-async function setAdm(cb){const e=cb.dataset.e,on=cb.checked;cb.disabled=true;const r=await db.rpc('set_admin',{p_email:e,p_on:on});
+async function setAdm(cb){if(!IS_ADM){return}const e=cb.dataset.e,on=cb.checked;cb.disabled=true;const r=await db.rpc('set_admin',{p_email:e,p_on:on});
   if(r.error){cb.checked=!on;cb.disabled=false;return msg('Gagal: '+r.error.message)}
   loadAcc();toast(e+(on?' dijadikan Admin Master':' diubah menjadi User (hanya Error MES & Keluar)'),async()=>{await db.rpc('set_admin',{p_email:e,p_on:!on});loadAcc()})}
 function googleLogin(){db.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}}).then(r=>{if(r.error)msg('Login Google gagal: '+r.error.message)})}
@@ -334,7 +334,7 @@ function rmOld(id){const i=OLD.findIndex(x=>x.id===id);if(i<0)return;const it=OL
   toast('Lampiran dihapus (berlaku saat Simpan Perubahan)',()=>{DEL=DEL.filter(x=>x!==it);OLD.splice(i,0,it);rOld();rPh()})}
 function rmPh(i){const it=PH.splice(i,1)[0];rPh();toast('Step dihapus dari daftar',()=>{PH.splice(i,0,it);rPh()})}
 function rmLk(i){const it=LK.splice(i,1)[0];rLk();toast('Link dihapus dari daftar',()=>{LK.splice(i,0,it);rLk()})}
-async function editErr(id){try{
+async function editErr(id){if(!IS_ADM){return}try{
   const e=await db.from('machine_errors').select('*').eq('id',id).single();if(e.error)throw e.error;
   const a=await db.from('error_attachments').select('*').eq('error_id',id).order('created_at');if(a.error)throw a.error;
   resetForm();EID=id;const d=e.data;
@@ -355,13 +355,13 @@ function caUpd(){const c=$('toasts'),n=c.querySelectorAll('.tt').length;let b=$(
   if(n>=2){if(!b){b=document.createElement('button');b.id='ca';b.className='btn g';b.textContent='✕ Tutup semua';b.onclick=()=>c.querySelectorAll('.tt').forEach(x=>x._fin&&x._fin())}c.appendChild(b)}
   else if(b)b.remove()}
 function refresh(){esearch();if(!$('v-mes').classList.contains('hide'))load();if(!$('v-trash').classList.contains('hide'))loadTrash();if(!$('v-det').classList.contains('hide'))nav('mes')}
-function delErr(){if(EID)softDel(EID,$('e-title').value)}
-async function softDel(id,title){if(!confirm('Yakin ingin menghapus error "'+(title||'ini')+'"?\n\nData akan dipindahkan ke Tempat Sampah (bisa dipulihkan dalam 30 hari).'))return;const r=await db.from('machine_errors').update({deleted_at:new Date().toISOString()}).eq('id',id);
+function delErr(){if(!IS_ADM){return}if(EID)softDel(EID,$('e-title').value)}
+async function softDel(id,title){if(!IS_ADM){return}if(!confirm('Yakin ingin menghapus error "'+(title||'ini')+'"?\n\nData akan dipindahkan ke Tempat Sampah (bisa dipulihkan dalam 30 hari).'))return;const r=await db.from('machine_errors').update({deleted_at:new Date().toISOString()}).eq('id',id);
   if(r.error)return msg('Gagal menghapus: '+r.error.message+' (sudah menjalankan trash.sql?)');
   if(EID===id)resetForm();refresh();
   toast('“'+(title||'Error')+'” dipindahkan ke Tempat Sampah',async()=>{const u=await db.from('machine_errors').update({deleted_at:null}).eq('id',id);if(u.error)msg('Gagal mengurungkan: '+u.error.message);else{msg('Error dikembalikan.',true);refresh()}})}
 let PEND=new Set();
-async function purgeOne(id){const a=await db.from('error_attachments').select('file_path').eq('error_id',id).eq('attachment_type','image');
+async function purgeOne(id){if(!IS_ADM){return}const a=await db.from('error_attachments').select('file_path').eq('error_id',id).eq('attachment_type','image');
   const p=(a.data||[]).map(x=>x.file_path).filter(Boolean);if(p.length)await db.storage.from(BUCKET).remove(p);
   return db.from('machine_errors').delete().eq('id',id)}
 async function purgeExpired(){try{const r=await db.from('machine_errors').select('id').lt('deleted_at',new Date(Date.now()-30*864e5).toISOString());for(const x of(r.data||[]))await purgeOne(x.id)}catch(e){}}
@@ -377,17 +377,17 @@ function tUpd(){document.querySelectorAll('.tck').forEach(c=>c.checked=TSEL.has(
   const n=TSEL.size,t=$('tn');if(!t)return;t.textContent=n?n+' dari '+TIDS.length+' dipilih':'Centang error yang mau dipulihkan / dihapus permanen (atau centang kotak paling atas untuk memilih semua)';$('tb-r').disabled=!n;$('tb-d').disabled=!n}
 function tOne(c){c.checked?TSEL.add(c.dataset.id):TSEL.delete(c.dataset.id);tUpd()}
 function tAll(c){TSEL=c.checked?new Set(TIDS):new Set();tUpd()}
-async function tBulkRes(){const ids=[...TSEL];if(!ids.length)return;const at=ids.map(i=>[i,TMAP[i].deleted_at]);
+async function tBulkRes(){if(!IS_ADM){return}const ids=[...TSEL];if(!ids.length)return;const at=ids.map(i=>[i,TMAP[i].deleted_at]);
   const r=await db.from('machine_errors').update({deleted_at:null}).in('id',ids);if(r.error)return msg('Gagal memulihkan: '+r.error.message);TSEL.clear();loadTrash();esearch();
   toast(ids.length+' error dipulihkan',async()=>{for(const x of at)await db.from('machine_errors').update({deleted_at:x[1]}).eq('id',x[0]);loadTrash();esearch()})}
-function tBulkDel(){const ids=[...TSEL];if(!ids.length)return;if(!confirm('HAPUS PERMANEN '+ids.length+' error terpilih?\n\nFoto dan datanya akan hilang selamanya dan tidak bisa dikembalikan.'))return;
+function tBulkDel(){if(!IS_ADM){return}const ids=[...TSEL];if(!ids.length)return;if(!confirm('HAPUS PERMANEN '+ids.length+' error terpilih?\n\nFoto dan datanya akan hilang selamanya dan tidak bisa dikembalikan.'))return;
   ids.forEach(i=>PEND.add(i));TSEL.clear();loadTrash();
   toast(ids.length+' error dihapus permanen dalam 10 detik',()=>{ids.forEach(i=>PEND.delete(i));loadTrash()},async()=>{let bad=0;for(const i of ids){const r=await purgeOne(i);PEND.delete(i);if(r.error)bad++}if(bad)msg(bad+' error gagal dihapus permanen.');loadTrash()})}
-async function restoreErr(id,title,at){const r=await db.from('machine_errors').update({deleted_at:null}).eq('id',id);if(r.error)return msg('Gagal memulihkan: '+r.error.message);loadTrash();esearch();
+async function restoreErr(id,title,at){if(!IS_ADM){return}const r=await db.from('machine_errors').update({deleted_at:null}).eq('id',id);if(r.error)return msg('Gagal memulihkan: '+r.error.message);loadTrash();esearch();
   toast('“'+title+'” dipulihkan',async()=>{await db.from('machine_errors').update({deleted_at:at}).eq('id',id);loadTrash();esearch()})}
 function permDel(id,title){if(!confirm('HAPUS PERMANEN "'+(title||'error ini')+'"?\n\nFoto dan datanya akan hilang selamanya dan tidak bisa dikembalikan.'))return;PEND.add(id);loadTrash();
   toast('“'+title+'” dihapus permanen dalam 10 detik',()=>{PEND.delete(id);loadTrash()},async()=>{const r=await purgeOne(id);PEND.delete(id);if(r.error)msg('Gagal hapus permanen: '+r.error.message);loadTrash()})}
-async function save(){const o=formData();if(!o.title)return msg('Judul Error wajib diisi.');o.status=o.status||'Open';
+async function save(){if(!IS_ADM){return}const o=formData();if(!o.title)return msg('Judul Error wajib diisi.');o.status=o.status||'Open';
   const lks=LK.filter(l=>l.url.trim());for(const l of lks)if(!vUrl(l.url.trim()))return msg('URL tidak valid: '+l.url);
   const b=$('sv'),isNew=!EID,old=b.textContent;b.disabled=true;b.textContent='Menyimpan…';let id=EID,up=[],step='Memeriksa sesi login',warn='';
   try{
@@ -534,11 +534,17 @@ async function mkPdf(e,imgs,lks,idTxt){const{jsPDF}=window.jspdf;const d=new jsP
     else{d.setFont('helvetica','normal');d.setFontSize(10);d.setTextColor(29,78,216);d.textWithLink(tt,M,y,{url:l.url})}
     y+=4.7;if(l.caption)para(l.caption,{lh:4.5});y+=1.5});
   sec('Analisis Penyebab',e.cause_analysis);sec('Kemungkinan Penyebab Lain',e.possible_causes);sec('Langkah Troubleshooting',e.troubleshooting_steps);sec('Hasil Pemeriksaan',e.inspection_results);sec('Solusi Perbaikan',e.solution);sec('Hasil Setelah Perbaikan',e.verification_results);sec('Catatan Tambahan',e.additional_notes);
-  const n=d.getNumberOfPages();for(let i=1;i<=n;i++){d.setPage(i);d.setFontSize(8);d.setFont('helvetica','normal');d.setTextColor(120);d.text('Halaman '+i+' / '+n,W-M,292,{align:'right'})}
+  const n=d.getNumberOfPages();for(let i=1;i<=n;i++){d.setPage(i);d.setFontSize(8);d.setFont('helvetica','normal');d.setTextColor(120);d.text('Halaman '+i+' / '+n,W-M,292,{align:'right'});
+    if(WM){d.text('Diunduh oleh: '+WM+' - '+new Date().toLocaleDateString('id-ID'),M,292);
+      /* watermark diagonal berulang menutupi seluruh halaman */
+      d.saveGraphicsState();d.setGState(new d.GState({opacity:0.13}));d.setFont('helvetica','bold');d.setFontSize(20);d.setTextColor(120,120,120);
+      const wt=WM+'  |  Dokumen Internal';
+      for(let gy=20;gy<310;gy+=48)for(let gx=-40;gx<230;gx+=100){d.text(wt,gx+((gy/48|0)%2?50:0),gy,{angle:35})}
+      d.restoreGraphicsState()}}
   if(fail.length)alert('Peringatan: foto berikut tidak dapat dimuat dan TIDAK masuk PDF:\n- '+fail.join('\n- '));
   return d}
 async function pdfOf(id,dl){let w=null;if(!dl){w=window.open('','_blank');if(w)w.document.write('<p style="font:16px sans-serif;padding:20px">Menyiapkan PDF…</p>')}
-  try{msg('Menyiapkan PDF…',true);const{e,imgs,lks}=await full(id);const ck=JSON.stringify([PFS,e,imgs.map(i=>[i.key,i.caption]),lks.map(l=>[l.url,l.title,l.caption])]);let d=PDFC.get(id);if(!d||d.k!==ck){d=await mkPdf(e,imgs,lks,id.slice(0,8).toUpperCase());d.k=ck;PDFC.set(id,d);if(PDFC.size>6)PDFC.delete(PDFC.keys().next().value)}
+  try{msg('Menyiapkan PDF…',true);const{e,imgs,lks}=await full(id);const ck=JSON.stringify([WM,PFS,e,imgs.map(i=>[i.key,i.caption]),lks.map(l=>[l.url,l.title,l.caption])]);let d=PDFC.get(id);if(!d||d.k!==ck){d=await mkPdf(e,imgs,lks,id.slice(0,8).toUpperCase());d.k=ck;PDFC.set(id,d);if(PDFC.size>6)PDFC.delete(PDFC.keys().next().value)}
   if(dl)d.save((e.error_code?e.error_code+' - ':'')+e.title.replace(/[\\/:*?"<>|]/g,'')+'.pdf');else{const u=d.output('bloburl');if(w)w.location.href=u;else window.open(u)}
   $('msg').className='hide'}catch(x){if(w)w.close();msg('PDF gagal: '+(x.message||x))}}
 init();fsInit();
