@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Error MES — Database Error Mesin</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 <style>
 :root{--nav:#12305a;--ac:#1d4ed8;--bg:#f3f5f8;--cd:#fff;--tx:#1b2433;--mu:#6b7686;--bd:#d9dee7;--red:#dc2626;--grn:#15803d;--amb:#b45309}
@@ -33,11 +35,11 @@ td{padding:9px 8px;border-bottom:1px solid var(--bd);vertical-align:top}
 .th{display:flex;gap:10px;flex-wrap:wrap}.th>div{width:170px;border:1px solid var(--bd);border-radius:8px;padding:6px;position:relative}
 .th img{width:100%;height:110px;object-fit:cover;border-radius:5px}.th .x{position:absolute;top:2px;right:2px;background:var(--red);color:#fff;border:0;border-radius:50%;width:22px;height:22px;cursor:pointer}
 .pf{position:relative;border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:12px;max-width:600px;background:#fff}.pf b{display:block;margin-bottom:6px;color:var(--nav)}.pf img{width:100%;max-height:380px;object-fit:contain;background:var(--bg);border-radius:6px;display:block}.pf label{margin-top:8px}.pf .x{position:absolute;top:8px;right:8px;background:var(--red);color:#fff;border:0;border-radius:50%;width:26px;height:26px;cursor:pointer;z-index:2}
-#toasts{position:fixed;left:18px;bottom:18px;display:flex;flex-direction:column;gap:8px;z-index:98}.tt{position:relative;overflow:hidden;background:#1b2433;color:#fff;border-radius:9px;padding:12px 14px 15px;display:flex;gap:14px;align-items:center;box-shadow:0 6px 18px rgba(0,0,0,.3);max-width:440px}.tt button{background:none;border:0;color:#60a5fa;font-weight:800;cursor:pointer;font-size:13px;white-space:nowrap}.tt i{position:absolute;left:0;bottom:0;height:3px;background:#60a5fa;animation:tt 10s linear forwards}@keyframes tt{from{width:100%}to{width:0}}
+#toasts{position:fixed;left:18px;bottom:18px;display:flex;flex-direction:column;gap:8px;z-index:98}.tt{position:relative;overflow:hidden;background:#1b2433;color:#fff;border-radius:9px;padding:12px 14px 15px;display:flex;gap:14px;align-items:center;box-shadow:0 6px 18px rgba(0,0,0,.3);max-width:440px}.tt button{background:none;border:0;color:#60a5fa;font-weight:800;cursor:pointer;font-size:13px;white-space:nowrap}.tt i{position:absolute;left:0;bottom:0;height:3px;background:#60a5fa;animation:tt 10s linear forwards}@keyframes tt{from{width:100%}to{width:0}}.tt .cl{color:#fff;opacity:.75;font-size:16px;padding:0 2px;margin-left:-4px}.tt .cl:hover{opacity:1}#ca{align-self:flex-start;box-shadow:0 4px 12px rgba(0,0,0,.25)}
 #login,#gate{position:fixed;inset:0;background:var(--nav);display:flex;align-items:center;justify-content:center;z-index:50}#gate{z-index:55}#login .card,#gate .card{width:380px;max-width:92vw;text-align:center}#login p,#gate p{margin:8px 0 16px}#gate .bar{justify-content:center}.badge{background:#fff;color:var(--nav);border-radius:99px;padding:1px 7px;font-size:11px;margin-left:4px}.gbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:11px;border:1px solid var(--bd);border-radius:8px;background:#fff;font-weight:700;font-size:14px;cursor:pointer;color:#3c4043}.gbtn:hover{background:#f6f8fb}#usr{position:absolute;bottom:14px;left:12px;right:12px;font-size:12px}#usr span{display:block;opacity:.75;word-break:break-all;margin-bottom:6px}#usr b{cursor:pointer;text-decoration:underline}
 .lr{display:grid;grid-template-columns:2fr 1.5fr 2fr auto;gap:8px;margin-bottom:8px}
 .dt dt{font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;margin-top:12px}.dt dd{white-space:pre-wrap;margin-top:2px}
-#msg{position:fixed;bottom:18px;right:18px;max-width:380px;padding:12px 16px;border-radius:9px;color:#fff;font-weight:600;z-index:99}
+#msg{position:fixed;bottom:18px;right:18px;max-width:380px;white-space:pre-wrap;padding:12px 16px;border-radius:9px;color:#fff;font-weight:600;z-index:99}
 #msg.ok{background:var(--grn)}#msg.er{background:var(--red)}
 .empty{text-align:center;padding:30px;color:var(--mu)}
 .ni{margin-right:8px}.lo{margin-top:14px;border-top:1px solid rgba(255,255,255,.2);border-radius:0 0 8px 8px;padding-top:14px}#mtop{display:none}
@@ -72,9 +74,9 @@ td:last-child{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;white-space:nor
 <div class="card hide" id="ebanner" style="border-color:var(--ac)"></div>
 <div id="form"></div>
 <div class="card hide" id="oldatt"></div>
-<div class="card"><h3>Foto Error</h3><input type="file" id="ph" accept="image/jpeg,image/png,image/webp" multiple onchange="addPh(this)"><p class="mu" style="margin:6px 0">JPG/PNG/WEBP, maks 5 MB per foto.</p><div id="phl"></div></div>
+<div class="card"><h3>Foto Error</h3><input type="file" id="ph" accept="image/*" multiple onchange="addPh(this)"><p class="mu" style="margin:6px 0">Foto otomatis dikecilkan (maks 1920 px) agar upload lancar. Format JPG/PNG/WEBP/HEIC.</p><div id="phl"></div></div>
 <div class="card"><h3>Link Referensi</h3><div id="lkl"></div><button class="btn g" onclick="addLk()">+ Tambah Link</button></div>
-<div class="bar"><button class="btn" id="sv" onclick="save()">💾 Simpan Error</button><button class="btn g" onclick="prevForm()">👁️ Preview Dokumentasi</button><button class="btn g" onclick="resetForm()">Reset Form</button></div></section>
+<div class="bar"><button class="btn" id="sv" onclick="save()">💾 Simpan Error</button><button class="btn g" onclick="prevForm()">👁️ Preview Dokumentasi</button><button class="btn g" onclick="resetForm()">Reset Form</button><button class="btn g" onclick="showLog()">🐞 Log Error</button></div><div class="card hide" id="elog" style="margin-top:12px"></div></section>
 
 <section id="v-mes" class="hide"><div class="crumb">Beranda / Error MES</div><h2>Error MES</h2>
 <div class="card"><label>🔍 Smart Search (gejala, kode, mesin, penyebab, solusi…)</label><input id="q" placeholder="cth: servo tidak bergerak / AL-52" oninput="deb(apply)">
@@ -103,7 +105,23 @@ const LBL={};FIELDS.forEach(s=>s[1].forEach(f=>LBL[f[0]]=f[1].replace(' *','')))
 const SYN=[['servo','motor','drive'],['berhenti','stop','mati','macet'],['tidak','gak','tak'],['bergerak','jalan','gerak'],['error','alarm','fault','gagal'],['encoder','enkoder'],['sensor','proximity','sensing'],['kabel','cable','konektor']];
 let db,PH=[],LK=[],page=0,TOT=0;
 const $=i=>document.getElementById(i), esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function msg(t,ok){const m=$('msg');m.textContent=t;m.className=ok?'ok':'er';clearTimeout(m._t);m._t=setTimeout(()=>m.className='hide',ok?3500:8000)}
+/* Pesan error TIDAK hilang sendiri (ketuk untuk menutup) dan dicatat ke log (localStorage) */
+function logErr(t){try{const a=JSON.parse(localStorage.getItem('errlog')||'[]');a.unshift({t:new Date().toLocaleString('id-ID'),m:String(t)});localStorage.setItem('errlog',JSON.stringify(a.slice(0,30)))}catch(_){}console.error('[Error MES]',t)}
+function msg(t,ok){const m=$('msg');clearTimeout(m._t);m.className=ok?'ok':'er';m.style.cursor='pointer';m.onclick=()=>m.className='hide';
+  if(ok){m.textContent=t;m._t=setTimeout(()=>m.className='hide',3500)}else{m.textContent=t+'  ✕ (ketuk untuk menutup)';logErr(t)}}
+function showLog(){const c=$('elog');if(!c.classList.contains('hide')){c.classList.add('hide');return}
+  let a=[];try{a=JSON.parse(localStorage.getItem('errlog')||'[]')}catch(_){}
+  c.innerHTML='<h3>🐞 Log Error Terakhir</h3>'+(a.length?a.map(x=>'<div class="sn" style="margin-bottom:8px"><span class="mu">'+esc(x.t)+'</span><br>'+esc(x.m)+'</div>').join('')+'<div class="bar"><button class="btn g" onclick="clearLog()">Hapus log</button></div>':'<div class="mu">Belum ada error tercatat.</div>');c.classList.remove('hide')}
+function clearLog(){try{localStorage.removeItem('errlog')}catch(_){}$('elog').classList.add('hide')}
+/* Terjemahan penyebab umum error Supabase supaya jelas apa yang harus dilakukan */
+function why(e){const m=String((e&&e.message)||e||''),c=String((e&&(e.statusCode||e.status||e.code))||''),s=m+' '+c;
+  if(/failed to fetch|networkerror|load failed|network request/i.test(s))return 'Koneksi internet terputus/tidak stabil. Coba lagi.';
+  if(/jwt|expired|not authenticated|invalid token/i.test(s))return 'Sesi login habis. Tekan Keluar lalu Masuk lagi.';
+  if(/row-level security|violates|permission|not authorized|unauthorized|\b403\b/i.test(s))return 'Ditolak izin (RLS/policy Supabase). Cek policy storage & tabel.';
+  if(/too large|\b413\b|payload|exceed/i.test(s))return 'Ukuran file melebihi batas bucket Supabase.';
+  if(/bucket not found/i.test(s))return 'Bucket "'+BUCKET+'" tidak ditemukan di Supabase.';
+  if(/mime|not supported|invalid.*type/i.test(s))return 'Tipe file ditolak oleh bucket.';
+  return ''}
 function init(){
   if(SUPABASE_URL.startsWith('ISI_')){document.body.innerHTML='<div style="margin:60px auto;max-width:520px" class="card"><h2>Konfigurasi belum diisi</h2><p>Buka file ini, isi <b>SUPABASE_URL</b> dan <b>SUPABASE_KEY</b> di bagian atas &lt;script&gt;, lalu jalankan <b>setup.sql</b> di Supabase SQL Editor.</p></div>';return}
   db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -156,10 +174,29 @@ function nav(v){['cat','mes','det','trash','acc'].forEach(x=>$('v-'+x).classList
   document.querySelectorAll('.nv').forEach(n=>n.classList.toggle('on',n.dataset.v===(v==='det'?'mes':v)));if(v==='mes')load();if(v==='cat')esearch();if(v==='trash')loadTrash();if(v==='acc')loadAcc()}
 
 /* ===== CATAT ERROR ===== */
-function addPh(inp){for(const f of inp.files){
-  if(!/^image\/(jpeg|png|webp)$/.test(f.type)){msg('"'+f.name+'" bukan JPG/PNG/WEBP.');continue}
-  if(f.size>MAXB){msg('"'+f.name+'" melebihi 5 MB.');continue}
-  PH.push({file:f,caption:'',url:URL.createObjectURL(f)})}inp.value='';rPh()}
+function decodeImg(f){return new Promise((ok,no)=>{const u=URL.createObjectURL(f),im=new Image();im.onload=()=>{URL.revokeObjectURL(u);ok(im)};im.onerror=()=>{URL.revokeObjectURL(u);no(new Error('format gambar tidak bisa dibaca browser ini'))};im.src=u})}
+/* Kecilkan foto (maks 1920px, JPEG 85%) -> foto kamera HP 5-12 MB jadi ~300-800 KB; HEIC dari Safari ikut terkonversi */
+async function shrink(f){
+  if(f.size<=1.2*1024*1024&&/^image\/(jpeg|png|webp)$/.test(f.type))return f;
+  const im=await decodeImg(f),k=Math.min(1,1920/Math.max(im.naturalWidth,im.naturalHeight)),c=document.createElement('canvas');
+  c.width=Math.max(1,Math.round(im.naturalWidth*k));c.height=Math.max(1,Math.round(im.naturalHeight*k));
+  const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.drawImage(im,0,0,c.width,c.height);
+  const b=await new Promise(r=>c.toBlob(r,'image/jpeg',0.85));if(!b)throw new Error('gagal mengompres gambar');
+  return new File([b],(f.name||'foto').replace(/\.[^.]+$/,'')+'.jpg',{type:'image/jpeg'})}
+async function addPh(inp){const files=Array.from(inp.files);inp.value='';
+  for(const f0 of files){let f=f0;
+    if(f.type&&!/^image\//.test(f.type)){msg('"'+f.name+'" bukan file gambar.');continue}
+    try{f=await shrink(f)}catch(e){msg('Foto "'+f0.name+'" tidak bisa diproses: '+(e.message||e));continue}
+    if(f.size>MAXB){msg('"'+f0.name+'" masih melebihi 5 MB setelah dikompres.');continue}
+    PH.push({file:f,caption:'',url:URL.createObjectURL(f)});rPh()}
+  rPh()}
+/* Upload dengan 3x percobaan (jaringan HP sering putus). "already exists" dianggap sukses karena percobaan sebelumnya sudah masuk. */
+async function upRetry(path,file){let last;
+  for(let i=0;i<3;i++){const u=await db.storage.from(BUCKET).upload(path,file,{contentType:file.type||'image/jpeg'});
+    if(!u.error)return;last=u.error;if(/already exists|duplicate/i.test(String(u.error.message||'')))return;
+    if(/row-level security|jwt|expired|unauthorized|403/i.test(String(u.error.message||'')))break;
+    await new Promise(r=>setTimeout(r,900*(i+1)))}
+  throw last}
 function rPh(){const off=OLD.filter(x=>x.attachment_type==='image').length;$('phl').innerHTML=PH.map((p,i)=>'<div class="pf"><button class="x" title="Hapus gambar" onclick="rmPh('+i+')">×</button><b>Gambar '+(off+i+1)+'</b><img src="'+p.url+'"><label>Penjelasan / deskripsi Gambar '+(off+i+1)+'</label><textarea placeholder="Jelaskan isi gambar ini…" oninput="PH['+i+'].caption=this.value">'+esc(p.caption)+'</textarea></div>').join('')}
 function addLk(){LK.push({url:'',title:'',caption:''});rLk()}
 function rLk(){$('lkl').innerHTML=LK.map((l,i)=>'<div class="lr"><input placeholder="https://…" value="'+esc(l.url)+'" oninput="LK['+i+'].url=this.value"><input placeholder="Judul referensi" value="'+esc(l.title)+'" oninput="LK['+i+'].title=this.value"><input placeholder="Keterangan" value="'+esc(l.caption)+'" oninput="LK['+i+'].caption=this.value"><button class="btn r" onclick="rmLk('+i+')">×</button></div>').join('')}
@@ -183,13 +220,21 @@ async function editErr(id){try{
   const a=await db.from('error_attachments').select('*').eq('error_id',id).order('created_at');if(a.error)throw a.error;
   resetForm();EID=id;const d=e.data;
   FIELDS.forEach(s=>s[1].forEach(f=>{let v=d[f[0]];if(f[0]==='occurred_at'&&v){const x=new Date(v);v=new Date(x-x.getTimezoneOffset()*6e4).toISOString().slice(0,16)}$('e-'+f[0]).value=v||(f[0]==='status'?'Open':'')}));
-  for(const x of a.data){if(x.attachment_type==='image'){const u=await db.storage.from(BUCKET).createSignedUrl(x.file_path,3600);x.src=u.data?u.data.signedUrl:''}OLD.push(x)}
+  await Promise.all(a.data.map(async x=>{if(x.attachment_type==='image'){try{const u=await db.storage.from(BUCKET).createSignedUrl(x.file_path,3600);x.src=u.data?u.data.signedUrl:''}catch(_){x.src=''}}}));
+  a.data.forEach(x=>OLD.push(x));
   rOld();rPh();$('ebanner').innerHTML='✏️ <b>Mode Edit:</b> '+esc(d.title)+' <span class="mu">(ID '+id.slice(0,8).toUpperCase()+')</span><div class="bar"><button class="btn g" onclick="resetForm()">Batal Edit</button><button class="btn r" onclick="delErr()">🗑️ Hapus Error Ini</button></div>';
   $('ebanner').classList.remove('hide');$('sv').textContent='💾 Simpan Perubahan';$('ebanner').scrollIntoView({behavior:'smooth'})
-}catch(x){msg('Gagal membuka data: '+(x.message||x))}}
-function toast(txt,onUndo,onEnd){const d=document.createElement('div');d.className='tt';d.innerHTML='<span>'+esc(txt)+'</span><button>Urungkan</button><i></i>';$('toasts').appendChild(d);
-  let done=false;const t=setTimeout(()=>{done=true;d.remove();if(onEnd)onEnd()},10000);
-  d.querySelector('button').onclick=()=>{if(done)return;done=true;clearTimeout(t);d.remove();onUndo()}}
+}catch(x){const h=why(x);msg('Gagal membuka data untuk diedit: '+(x.message||x)+(h?'\nSolusi: '+h:''))}}
+function toast(txt,onUndo,onEnd){const d=document.createElement('div');d.className='tt';d.innerHTML='<span>'+esc(txt)+'</span><button class="u">Urungkan</button><button class="cl" title="Tutup">✕</button><i></i>';$('toasts').appendChild(d);
+  let done=false;
+  const fin=()=>{if(done)return;done=true;clearTimeout(t);d.remove();caUpd();if(onEnd)onEnd()}; /* tutup = terima perubahan, tidak bisa diurungkan lagi */
+  const t=setTimeout(fin,10000);d._fin=fin;
+  d.querySelector('.u').onclick=()=>{if(done)return;done=true;clearTimeout(t);d.remove();caUpd();onUndo()};
+  d.querySelector('.cl').onclick=fin;caUpd()}
+/* tombol "Tutup semua" muncul otomatis kalau ada 2+ notifikasi menumpuk */
+function caUpd(){const c=$('toasts'),n=c.querySelectorAll('.tt').length;let b=$('ca');
+  if(n>=2){if(!b){b=document.createElement('button');b.id='ca';b.className='btn g';b.textContent='✕ Tutup semua';b.onclick=()=>c.querySelectorAll('.tt').forEach(x=>x._fin&&x._fin())}c.appendChild(b)}
+  else if(b)b.remove()}
 function refresh(){esearch();if(!$('v-mes').classList.contains('hide'))load();if(!$('v-trash').classList.contains('hide'))loadTrash();if(!$('v-det').classList.contains('hide'))nav('mes')}
 function delErr(){if(EID)softDel(EID,$('e-title').value)}
 async function softDel(id,title){const r=await db.from('machine_errors').update({deleted_at:new Date().toISOString()}).eq('id',id);
@@ -214,23 +259,34 @@ function permDel(id,title){PEND.add(id);loadTrash();
   toast('“'+title+'” dihapus permanen dalam 10 detik',()=>{PEND.delete(id);loadTrash()},async()=>{const r=await purgeOne(id);PEND.delete(id);if(r.error)msg('Gagal hapus permanen: '+r.error.message);loadTrash()})}
 async function save(){const o=formData();if(!o.title)return msg('Judul Error wajib diisi.');o.status=o.status||'Open';
   const lks=LK.filter(l=>l.url.trim());for(const l of lks)if(!vUrl(l.url.trim()))return msg('URL tidak valid: '+l.url);
-  const b=$('sv'),isNew=!EID,old=b.textContent;b.disabled=true;b.textContent='Menyimpan…';let id=EID,up=[];
+  const b=$('sv'),isNew=!EID,old=b.textContent;b.disabled=true;b.textContent='Menyimpan…';let id=EID,up=[],step='Memeriksa sesi login',warn='';
   try{
-    if(isNew){const r=await db.from('machine_errors').insert(o).select('id').single();if(r.error)throw r.error;id=r.data.id}
-    else{const r=await db.from('machine_errors').update(o).eq('id',id);if(r.error)throw r.error}
+    const s=await db.auth.getSession();
+    if(!s.data||!s.data.session){const rf=await db.auth.refreshSession();if(rf.error||!rf.data||!rf.data.session)throw new Error('Sesi login habis')}
+    if(isNew){step='Menyimpan data error';const r=await db.from('machine_errors').insert(o).select('id').single();if(r.error)throw r.error;id=r.data.id}
+    else{step='Memperbarui data error';const r=await db.from('machine_errors').update(o).eq('id',id).select('id');if(r.error)throw r.error;
+      if(!r.data||!r.data.length)throw new Error('Perubahan tidak tersimpan: ditolak izin (RLS) atau data sudah dihapus')}
     const rows=[];
-    for(let i=0;i<PH.length;i++){const p=PH[i],ext=(p.file.name.split('.').pop()||'jpg').replace(/[^a-z0-9]/gi,'').toLowerCase();
-      const path=id+'/'+Date.now()+'-'+i+'.'+ext;
-      const u=await db.storage.from(BUCKET).upload(path,p.file,{contentType:p.file.type});if(u.error)throw new Error('Upload foto "'+p.file.name+'" gagal: '+u.error.message);
+    for(let i=0;i<PH.length;i++){const p=PH[i],ext=(p.file.name.split('.').pop()||'jpg').replace(/[^a-z0-9]/gi,'').toLowerCase()||'jpg';
+      const path=id+'/'+Date.now()+'-'+i+'-'+Math.random().toString(36).slice(2,6)+'.'+ext;
+      step='Upload foto "'+p.file.name+'" ('+(i+1)+'/'+PH.length+', '+Math.round(p.file.size/1024)+' KB)';b.textContent='Upload foto '+(i+1)+'/'+PH.length+'…';
+      await upRetry(path,p.file);
       up.push(path);rows.push({error_id:id,attachment_type:'image',file_path:path,title:p.file.name,caption:p.caption||null})}
     lks.forEach(l=>rows.push({error_id:id,attachment_type:'link',url:l.url.trim(),title:l.title||null,caption:l.caption||null}));
-    if(rows.length){const a=await db.from('error_attachments').insert(rows);if(a.error)throw a.error}
-    if(!isNew&&DEL.length){const d=await db.from('error_attachments').delete().in('id',DEL.map(x=>x.id));if(d.error)throw d.error;const p=DEL.filter(x=>x.file_path).map(x=>x.file_path);if(p.length)await db.storage.from(BUCKET).remove(p)}
-    msg(isNew?'Tersimpan. ID Error: '+id.slice(0,8).toUpperCase()+' ('+id+')':'Perubahan tersimpan.',true);resetForm();esearch();
+    if(rows.length){step='Menyimpan data lampiran';const a=await db.from('error_attachments').insert(rows);if(a.error)throw a.error}
+    up=[]; /* lampiran sudah tercatat di database: file TIDAK boleh ikut dihapus lagi oleh rollback */
+    if(!isNew&&DEL.length){
+      try{const d=await db.from('error_attachments').delete().in('id',DEL.map(x=>x.id)).select('id');if(d.error)throw d.error;
+        const gone=new Set((d.data||[]).map(x=>x.id));
+        const p=DEL.filter(x=>x.file_path&&gone.has(x.id)).map(x=>x.file_path);if(p.length){const rm=await db.storage.from(BUCKET).remove(p);if(rm.error)console.warn(rm.error)}
+        if(gone.size<DEL.length)warn=' PERHATIAN: '+(DEL.length-gone.size)+' lampiran lama gagal dihapus (ditolak izin/RLS) — hapus ulang lewat Edit.'}
+      catch(x){warn=' PERHATIAN: lampiran lama gagal dihapus ('+(x.message||x)+').'}}
+    if(warn)msg('Tersimpan, tetapi:'+warn);else msg(isNew?'Tersimpan. ID Error: '+id.slice(0,8).toUpperCase()+' ('+id+')':'Perubahan tersimpan.',true);
+    resetForm();esearch();
   }catch(e){
     if(up.length)await db.storage.from(BUCKET).remove(up);
     if(isNew&&id)await db.from('machine_errors').delete().eq('id',id);
-    msg('Gagal menyimpan (form tidak dikosongkan): '+(e.message||e));b.textContent=old;b.disabled=false;return;
+    const h=why(e);msg('GAGAL pada langkah: '+step+'\nPenyebab: '+(e.message||e)+(h?'\nSolusi: '+h:'')+'\n(form tidak dikosongkan, data Anda aman — coba Simpan lagi)');b.textContent=old;b.disabled=false;return;
   }b.disabled=false}
 async function prevForm(){const o=formData();if(!o.title)return msg('Isi minimal Judul Error.');
   const imgs=PH.map(p=>({src:p.url,caption:p.caption,title:p.file.name}));
@@ -271,24 +327,54 @@ async function detail(id){nav('det');const v=$('v-det');v.innerHTML='<div class=
 
 /* ===== PDF ===== */
 function loadImg(src){return new Promise((ok,no)=>{fetch(src).then(r=>{if(!r.ok)throw 0;return r.blob()}).then(b=>{const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>ok({d:fr.result,w:im.width,h:im.height,t:b.type.includes('png')?'PNG':b.type.includes('webp')?'WEBP':'JPEG'});im.onerror=no;im.src=fr.result};fr.readAsDataURL(b)}).catch(no)})}
+/* Font bawaan jsPDF (helvetica) hanya mendukung Latin-1. Teks lain (Mandarin/Jepang/simbol/emoji) digambar via canvas -> gambar, supaya tampil benar. */
+const PXMM=12,PT=0.3528,CVF='"Noto Sans SC","Noto Sans CJK SC","Microsoft YaHei","PingFang SC","Hiragino Sans GB","Segoe UI",Roboto,Arial,sans-serif';
+const needCv=s=>/[^\x00-\xFF\u2013\u2014\u2018\u2019\u201A\u201C\u201D\u201E\u2020\u2021\u2022\u2026\u2030\u2039\u203A\u20AC\u2122\u0152\u0153\u0160\u0161\u0178\u017D\u017E\u0192\u02C6\u02DC]/.test(s);
+const cvFont=(size,st)=>(st.includes('italic')?'italic ':'')+(st.includes('bold')?'700':'400')+' '+(size*PT*PXMM)+'px '+CVF;
+let _cx;const cx=()=>_cx||(_cx=document.createElement('canvas').getContext('2d'));
+function cvWrap(s,size,st,maxMm){const c=cx();c.font=cvFont(size,st);const mx=maxMm*PXMM,out=[];let ln='',sp=-1;
+  for(const ch of Array.from(s)){const t=ln+ch;
+    if(ln&&c.measureText(t).width>mx){
+      if(ch===' '){out.push(ln);ln='';sp=-1;continue}
+      if(sp>0){out.push(ln.slice(0,sp));ln=ln.slice(sp+1)+ch}else{out.push(ln);ln=ch}
+      sp=ln.lastIndexOf(' ')
+    }else{ln=t;if(ch===' ')sp=ln.length-1}}
+  out.push(ln);return out}
+function cvLine(line,size,st,col){const font=cvFont(size,st),fs=size*PT*PXMM,c=document.createElement('canvas'),g=c.getContext('2d');
+  g.font=font;const w=Math.ceil(g.measureText(line).width)+4,H=Math.ceil(fs*1.5);c.width=w;c.height=H;
+  g.font=font;g.fillStyle='rgb('+col.join(',')+')';g.textBaseline='alphabetic';g.fillText(line,0,fs*1.1);
+  return{d:c.toDataURL('image/png'),w:w/PXMM,h:H/PXMM,base:fs*1.1/PXMM}}
+async function loadCjk(txt){const x=txt.replace(/[\x00-\xFF]/g,'');if(!x||!document.fonts)return;
+  try{await Promise.race([Promise.all([document.fonts.load('400 16px "Noto Sans SC"',x),document.fonts.load('700 16px "Noto Sans SC"',x)]),new Promise(r=>setTimeout(r,4000))])}catch(_){}}
 async function mkPdf(e,imgs,lks,idTxt){const{jsPDF}=window.jspdf;const d=new jsPDF({unit:'mm',format:'a4'}),W=210,M=15,CW=W-2*M;let y=0,fail=[];
+  await loadCjk([e.title,e.error_code,e.machine_name,e.production_line,e.category,e.status,e.description,e.symptoms,e.alarm_message,e.cause_analysis,e.possible_causes,e.troubleshooting_steps,e.inspection_results,e.solution,e.verification_results,e.additional_notes,...imgs.map(i=>i.caption),...lks.map(l=>(l.title||'')+(l.caption||''))].filter(Boolean).join(''));
   const brk=h=>{if(y+h>285){d.addPage();y=20}};
+  /* tulis paragraf (auto-wrap, auto page-break); otomatis pilih jalur native / canvas */
+  const para=(txt,o={})=>{const size=o.size||10,st=o.st||'normal',col=o.col||[20,20,20],lh=o.lh||4.7,x=o.x==null?M:o.x,mw=o.w||(CW-(x-M));
+    String(txt==null?'':txt).replace(/\r/g,'').replace(/\t/g,'    ').split('\n').forEach(p=>{
+      if(!p.trim()){brk(lh);y+=lh;return}
+      const cv=needCv(p);let lines;
+      if(cv)lines=cvWrap(p,size,st,mw);else{d.setFont('helvetica',st);d.setFontSize(size);lines=d.splitTextToSize(p,mw)}
+      lines.forEach(l=>{brk(lh);if(cv){const im=cvLine(l,size,st,col);d.addImage(im.d,'PNG',x,y-im.base,im.w,im.h)}else{d.setFont('helvetica',st);d.setFontSize(size);d.setTextColor(col[0],col[1],col[2]);d.text(l,x,y)}y+=lh})})};
+  const head=(h,gap)=>{brk(14);y+=3;d.setFont('helvetica','bold');d.setFontSize(11);d.setTextColor(18,48,90);d.text(h,M,y);y+=gap;d.setTextColor(20)};
   d.setFillColor(18,48,90);d.rect(0,0,W,16,'F');d.setTextColor(255);d.setFontSize(12);d.setFont('helvetica','bold');d.text('ERROR MES — Dokumentasi Error Mesin',M,10);y=26;d.setTextColor(20);
-  d.setFontSize(16);const t=d.splitTextToSize(e.title,CW);d.text(t,M,y);y+=t.length*7+2;
+  para(e.title,{size:16,st:'bold',lh:7});y+=2;
   const meta=[['Kode Error',e.error_code],['ID Dokumentasi',idTxt],['Nama Mesin',e.machine_name],['Lokasi / Line',e.production_line],['Kategori',e.category],['Tanggal Kejadian',e.occurred_at?new Date(e.occurred_at).toLocaleString('id-ID'):''],['Status',e.status]];
-  d.setFontSize(10);meta.forEach(m=>{brk(6);d.setFont('helvetica','bold');d.text(m[0],M,y);d.setFont('helvetica','normal');d.text(': '+(m[1]||'-'),M+38,y,{maxWidth:CW-38});y+=6});
-  const sec=(h,txt)=>{brk(14);y+=3;d.setFont('helvetica','bold');d.setFontSize(11);d.setTextColor(18,48,90);d.text(h,M,y);y+=5.5;d.setTextColor(20);d.setFont('helvetica','normal');d.setFontSize(10);
-    d.splitTextToSize(txt||'-',CW).forEach(l=>{brk(5);d.text(l,M,y);y+=4.7})};
+  meta.forEach(m=>{brk(6);d.setFont('helvetica','bold');d.setFontSize(10);d.setTextColor(20);d.text(m[0],M,y);para(': '+(m[1]||'-'),{x:M+38,lh:6})});
+  const sec=(h,txt)=>{head(h,5.5);para(txt||'-')};
   sec('Deskripsi Error',e.description);sec('Gejala yang Ditemukan',e.symptoms);if(e.alarm_message)sec('Alarm / Pesan',e.alarm_message);
-  brk(14);y+=3;d.setFont('helvetica','bold');d.setFontSize(11);d.setTextColor(18,48,90);d.text('Foto Error',M,y);y+=6;d.setTextColor(20);
-  if(!imgs.length){d.setFont('helvetica','normal');d.setFontSize(10);d.text('-',M,y);y+=5}
-  let gi=0;for(const im of imgs){gi++;try{if(!im.src)throw 0;const L=await loadImg(im.src);let w=CW,h=w*L.h/L.w;if(h>95){h=95;w=h*L.w/L.h}brk(h+24);d.setFont('helvetica','bold');d.setFontSize(10);d.text('Gambar '+gi,M,y);y+=4.5;d.addImage(L.d,L.t,M,y,w,h);y+=h+4;
-    d.setFontSize(9);d.setFont('helvetica','italic');const cl=d.splitTextToSize(im.caption||'Tidak ada keterangan',CW);d.text(cl,M,y);y+=cl.length*4.3+4}catch(x){fail.push(im.title||'foto')}}
-  brk(14);y+=3;d.setFont('helvetica','bold');d.setFontSize(11);d.setTextColor(18,48,90);d.text('Link Referensi',M,y);y+=5.5;d.setTextColor(20);d.setFontSize(10);
-  if(!lks.length){d.setFont('helvetica','normal');d.text('-',M,y);y+=5}
-  lks.forEach(l=>{brk(11);d.setFont('helvetica','normal');d.setTextColor(29,78,216);d.textWithLink(l.title||l.url,M,y,{url:l.url});y+=4.7;d.setTextColor(20);if(l.caption){d.splitTextToSize(l.caption,CW).forEach(s=>{brk(5);d.text(s,M,y);y+=4.5})}y+=1.5});
+  head('Foto Error',6);
+  if(!imgs.length)para('-');
+  let gi=0;for(const im of imgs){gi++;try{if(!im.src)throw 0;const L=await loadImg(im.src);let w=CW,h=w*L.h/L.w;if(h>95){h=95;w=h*L.w/L.h}brk(h+24);d.setFont('helvetica','bold');d.setFontSize(10);d.setTextColor(20);d.text('Gambar '+gi,M,y);y+=4.5;d.addImage(L.d,L.t,M,y,w,h);y+=h+4;
+    para(im.caption||'Tidak ada keterangan',{size:9,st:'italic',lh:4.3});y+=4}catch(x){fail.push(im.title||'foto')}}
+  head('Link Referensi',5.5);
+  if(!lks.length)para('-');
+  lks.forEach(l=>{brk(11);const tt=l.title||l.url;
+    if(needCv(tt)){const im=cvLine(tt,10,'normal',[29,78,216]),k=Math.min(1,CW/im.w);d.addImage(im.d,'PNG',M,y-im.base*k,im.w*k,im.h*k);d.link(M,y-im.base*k,im.w*k,im.h*k,{url:l.url})}
+    else{d.setFont('helvetica','normal');d.setFontSize(10);d.setTextColor(29,78,216);d.textWithLink(tt,M,y,{url:l.url})}
+    y+=4.7;if(l.caption)para(l.caption,{lh:4.5});y+=1.5});
   sec('Analisis Penyebab',e.cause_analysis);sec('Kemungkinan Penyebab Lain',e.possible_causes);sec('Langkah Troubleshooting',e.troubleshooting_steps);sec('Hasil Pemeriksaan',e.inspection_results);sec('Solusi Perbaikan',e.solution);sec('Hasil Setelah Perbaikan',e.verification_results);sec('Catatan Tambahan',e.additional_notes);
-  const n=d.getNumberOfPages();for(let i=1;i<=n;i++){d.setPage(i);d.setFontSize(8);d.setTextColor(120);d.text('Halaman '+i+' / '+n,W-M,292,{align:'right'})}
+  const n=d.getNumberOfPages();for(let i=1;i<=n;i++){d.setPage(i);d.setFontSize(8);d.setFont('helvetica','normal');d.setTextColor(120);d.text('Halaman '+i+' / '+n,W-M,292,{align:'right'})}
   if(fail.length)alert('Peringatan: foto berikut tidak dapat dimuat dan TIDAK masuk PDF:\n- '+fail.join('\n- '));
   return d}
 async function pdfOf(id,dl){try{msg('Menyiapkan PDF…',true);const{e,imgs,lks}=await full(id);const d=await mkPdf(e,imgs,lks,id.slice(0,8).toUpperCase());
