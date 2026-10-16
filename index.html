@@ -88,7 +88,7 @@ td:last-child{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;white-space:nor
 <div class="card hide" id="oldatt"></div>
 <div class="card"><h3>Foto Error</h3><input type="file" id="ph" accept="image/*" multiple onchange="addPh(this)"><p class="mu" style="margin:6px 0">Foto otomatis dikecilkan (maks 1920 px) agar upload lancar. Format JPG/PNG/WEBP/HEIC.</p><div id="phl"></div></div>
 <div class="card"><h3>Link Referensi</h3><div id="lkl"></div><button class="btn g" onclick="addLk()">+ Tambah Link</button></div>
-<div class="bar"><button class="btn" id="sv" onclick="save()">💾 Simpan Error</button><button class="btn g" onclick="prevForm()">👁️ Preview Dokumentasi</button><button class="btn g" onclick="resetForm()">Reset Form</button><button class="btn g" onclick="showLog()">🐞 Log Error</button></div><div class="card hide" id="elog" style="margin-top:12px"></div></section>
+<div class="bar"><button class="btn" id="sv" onclick="save()">💾 Simpan Error</button><button class="btn g" onclick="prevForm()">👁️ Preview Dokumentasi</button><span class="fsw"></span><button class="btn g" onclick="resetForm()">Reset Form</button><button class="btn g" onclick="showLog()">🐞 Log Error</button></div><div class="card hide" id="elog" style="margin-top:12px"></div></section>
 
 <section id="v-mes" class="hide"><div class="crumb">Beranda / Error MES</div><h2>Error MES</h2>
 <div class="card"><label>🔍 Smart Search (gejala, kode, mesin, penyebab, solusi…)</label><input id="q" placeholder="cth: servo tidak bergerak / AL-52" oninput="deb(apply)">
@@ -97,7 +97,7 @@ td:last-child{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;white-space:nor
 <div><label>Kode error</label><input id="f-cd" oninput="deb(apply)"></div><div><label>Status</label><select id="f-st" onchange="apply()"><option value="">Semua</option><option>Open</option><option>In Progress</option><option>Resolved</option></select></div>
 <div><label>Tanggal awal</label><input type="date" id="f-d1" onchange="apply()"></div><div><label>Tanggal akhir</label><input type="date" id="f-d2" onchange="apply()"></div></div>
 <div class="bar"><button class="btn" onclick="apply()">Terapkan Filter</button><button class="btn g" onclick="resetF()">Reset Filter</button></div></details></div>
-<div class="card" id="lst"></div><div class="bar" id="pg" style="justify-content:center"></div></section>
+<div class="bar" style="margin:0 0 10px"><span class="fsw"></span></div><div class="card" id="lst"></div><div class="bar" id="pg" style="justify-content:center"></div></section>
 
 <section id="v-trash" class="hide"></section>
 <section id="v-acc" class="hide"></section>
@@ -203,7 +203,8 @@ async function ieLoad(src){const r=await fetch(src);if(!r.ok)throw new Error('fo
   c.width=Math.max(1,Math.round(w*k));c.height=Math.max(1,Math.round(h*k));const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.drawImage(bm,0,0,c.width,c.height);if(bm.close)bm.close();return c}
 function ieClone(c){const n=document.createElement('canvas');n.width=c.width;n.height=c.height;n.getContext('2d').drawImage(c,0,0);return n}
 async function editImg(kind,ref){let src,name='foto.jpg',tgt;
-  if(kind==='ph'){tgt=PH[ref];if(!tgt)return;src=tgt.url;name=tgt.file.name}
+  if(kind==='ph'){const ab=String(ref).split('.');tgt=PH[ab[0]]&&PH[ab[0]].files[ab[1]];if(!tgt)return;src=tgt.url;name=tgt.file.name}
+  else if(kind==='add'){tgt=ADD[ref];if(!tgt)return;src=tgt.url;name=tgt.file.name}
   else{tgt=OLD.find(o=>o.id===ref);if(!tgt)return;src=tgt._new?tgt._new.url:tgt.src;name=(tgt._new?tgt._new.file.name:tgt.title)||name}
   if(!src)return msg('Foto belum bisa dimuat, coba lagi sebentar.');
   try{msg('Membuka editor foto…',true);const c=await ieLoad(src);$('msg').className='hide';
@@ -246,7 +247,8 @@ async function ieApply(){if(!IE)return;const b=$('ie-ok');b.disabled=true;
   try{ieBake();let q=.88,blob;for(let i=0;i<4;i++){blob=await new Promise(r=>IE.cv.toBlob(r,'image/jpeg',q));if(!blob)throw new Error('gagal membuat gambar');if(blob.size<=MAXB)break;q-=.15}
     if(blob.size>MAXB)throw new Error('masih melebihi 5 MB');
     const f=new File([blob],(IE.name||'foto').replace(/\.[^.]+$/,'').replace(/-edit$/,'')+'-edit.jpg',{type:'image/jpeg'}),url=URL.createObjectURL(f);
-    if(IE.kind==='ph'){const p=PH[IE.ref];if(p){URL.revokeObjectURL(p.url);p.file=f;p.url=url}rPh()}
+    if(IE.kind==='ph'){const ab=String(IE.ref).split('.'),p=PH[ab[0]]&&PH[ab[0]].files[ab[1]];if(p){URL.revokeObjectURL(p.url);p.file=f;p.url=url}rPh()}
+    else if(IE.kind==='add'){const p=ADD[IE.ref];if(p){URL.revokeObjectURL(p.url);p.file=f;p.url=url}rOld()}
     else{const x=OLD.find(o=>o.id===IE.ref);if(x){if(x._new)URL.revokeObjectURL(x._new.url);x._new={file:f,url:url};x._dirty=true}rOld()}
     ieClose();msg('Foto diedit. Tekan Simpan agar tersimpan permanen.',true)}
   catch(e){msg('Gagal menerapkan edit: '+(e.message||e))}finally{b.disabled=false}}
@@ -267,7 +269,7 @@ async function addPh(inp){const files=Array.from(inp.files);inp.value='';
     if(f.type&&!/^image\//.test(f.type)){msg('"'+f.name+'" bukan file gambar.');continue}
     try{f=await shrink(f)}catch(e){msg('Foto "'+f0.name+'" tidak bisa diproses: '+(e.message||e));continue}
     if(f.size>MAXB){msg('"'+f0.name+'" masih melebihi 5 MB setelah dikompres.');continue}
-    PH.push({file:f,caption:'',url:URL.createObjectURL(f)});rPh()}
+    PH.push({files:[{file:f,url:URL.createObjectURL(f)}],caption:''});rPh()}
   rPh()}
 /* Upload dengan 3x percobaan (jaringan HP sering putus). "already exists" dianggap sukses karena percobaan sebelumnya sudah masuk. */
 async function upRetry(path,file){let last;
@@ -276,13 +278,20 @@ async function upRetry(path,file){let last;
     if(/row-level security|jwt|expired|unauthorized|403/i.test(String(u.error.message||'')))break;
     await new Promise(r=>setTimeout(r,900*(i+1)))}
   throw last}
-function rPh(){const off=OLD.filter(x=>x.attachment_type==='image').length;$('phl').innerHTML=PH.map((p,i)=>'<div class="pf"><button class="x" title="Hapus gambar" onclick="rmPh('+i+')">×</button><b>Gambar '+(off+i+1)+'</b><img src="'+p.url+'"><label>Penjelasan / deskripsi Gambar '+(off+i+1)+'</label><textarea placeholder="Jelaskan isi gambar ini…" oninput="PH['+i+'].caption=this.value">'+esc(p.caption)+'</textarea><div class=\"bar\" style=\"margin-top:8px\"><button class=\"btn g\" onclick=\"editImg(\'ph\','+i+')\">✏️ Edit Foto</button></div></div>').join('')}
+async function addPhTo(i,inp){const files=Array.from(inp.files);inp.value='';const g=PH[i];if(!g)return;
+  for(const f0 of files){try{if(f0.type&&!/^image\//.test(f0.type))throw new Error('bukan file gambar');const f=await shrink(f0);if(f.size>MAXB)throw new Error('melebihi 5 MB setelah dikompres');g.files.push({file:f,url:URL.createObjectURL(f)});rPh()}catch(e){msg('Foto "'+f0.name+'" tidak bisa diproses: '+(e.message||e))}}rPh()}
+function rmPhF(i,j){const g=PH[i];if(!g)return;const it=g.files.splice(j,1)[0];
+  if(!g.files.length){PH.splice(i,1);rPh();toast('Gambar dihapus dari daftar',()=>{g.files.splice(j,0,it);PH.splice(i,0,g);rPh()});return}
+  rPh();toast('Foto dihapus dari gambar',()=>{g.files.splice(j,0,it);rPh()})}
+function rPh(){const off=oldGroups().length;$('phl').innerHTML=PH.map((g,i)=>'<div class="pf"><button class="x" title="Hapus seluruh gambar ini" onclick="rmPh('+i+')">×</button><b>Gambar '+(off+i+1)+' <span class="mu">('+g.files.length+' foto)</span></b><div class="th">'
+  +g.files.map((p,j)=>'<div><button class="x" title="Hapus foto ini" onclick="rmPhF('+i+','+j+')">×</button><img src="'+p.url+'"><div class="bar" style="margin-top:4px"><button class="btn g" onclick="editImg(\'ph\',\''+i+'.'+j+'\')">✏️ Edit</button></div></div>').join('')
+  +'</div><label>Penjelasan / deskripsi Gambar '+(off+i+1)+'</label><textarea placeholder="Jelaskan isi gambar ini…" oninput="PH['+i+'].caption=this.value">'+esc(g.caption)+'</textarea><div class="bar" style="margin-top:8px"><button class="btn g" onclick="$(\'pa-'+i+'\').click()">➕ Tambah Foto</button><input type="file" accept="image/*" multiple class="hide" id="pa-'+i+'" onchange="addPhTo('+i+',this)"></div></div>').join('')}
 function addLk(){LK.push({url:'',title:'',caption:''});rLk()}
 function rLk(){$('lkl').innerHTML=LK.map((l,i)=>'<div class="lr"><input placeholder="https://…" value="'+esc(l.url)+'" oninput="LK['+i+'].url=this.value"><input placeholder="Judul referensi" value="'+esc(l.title)+'" oninput="LK['+i+'].title=this.value"><input placeholder="Keterangan" value="'+esc(l.caption)+'" oninput="LK['+i+'].caption=this.value"><button class="btn r" onclick="rmLk('+i+')">×</button></div>').join('')}
 function vUrl(u){try{const x=new URL(u);return x.protocol==='http:'||x.protocol==='https:'}catch(e){return false}}
 function formData(){const o={};FIELDS.forEach(s=>s[1].forEach(f=>{let v=$('e-'+f[0]).value.trim();if(f[0]==='occurred_at')v=v?new Date(v).toISOString():null;o[f[0]]=v===''?null:v}));return o}
-let EID=null,OLD=[],DEL=[];
-function resetForm(){FIELDS.forEach(s=>s[1].forEach(f=>{$('e-'+f[0]).value=f[0]==='status'?'Open':''}));PH=[];LK=[];EID=null;OLD=[];DEL=[];rPh();addLk();rOld();$('ebanner').classList.add('hide');$('sv').textContent='💾 Simpan Error'}
+let EID=null,OLD=[],DEL=[],ADD=[];
+function resetForm(){FIELDS.forEach(s=>s[1].forEach(f=>{$('e-'+f[0]).value=f[0]==='status'?'Open':''}));PH=[];LK=[];EID=null;OLD=[];DEL=[];ADD=[];rPh();addLk();rOld();$('ebanner').classList.add('hide');$('sv').textContent='💾 Simpan Error'}
 async function esearch(){const my=++SEQ2;const r=await srch($('eq').value,{},8,0);if(my!==SEQ2)return;
   if(r.error){$('elist').innerHTML='<div class="mu" style="color:var(--red)">Gagal memuat: '+esc(r.error.message)+'</div>';return}
   $('elist').innerHTML=r.data.length?'<table>'+r.data.map(e=>'<tr><td><b>'+esc(e.title)+'</b> '+(e.error_code?'<span class="tg">'+esc(e.error_code)+'</span>':'')+'<div class="mu">'+esc(e.machine_name||'—')+' · '+esc(e.category||'—')+' · '+e.status+'</div></td><td style="text-align:right;white-space:nowrap"><button class="btn g" onclick="editErr(\''+e.id+'\')">✏️ Edit</button></td></tr>').join('')+'</table>':'<div class="mu">Tidak ada data yang cocok.</div>'}
@@ -292,10 +301,22 @@ async function repOld(id,inp){const f0=inp.files[0];inp.value='';if(!f0)return;c
   try{const f=await shrink(f0);if(f.size>MAXB)throw new Error('melebihi 5 MB setelah dikompres');if(x._new)URL.revokeObjectURL(x._new.url);x._new={file:f,url:URL.createObjectURL(f)};x._dirty=true;rOld()}
   catch(e){msg('Foto pengganti tidak bisa diproses: '+(e.message||e))}}
 function cancelRep(id){const x=OLD.find(o=>o.id===id);if(x&&x._new){URL.revokeObjectURL(x._new.url);x._new=null;rOld()}}
+const gkOf=x=>{const m=/\/g([a-z0-9]+)-/.exec(x.file_path||'');return m?m[1]:String(x.id).replace(/-/g,'')};
+function oldGroups(){const m=new Map();OLD.filter(x=>x.attachment_type==='image').forEach(x=>{const k=gkOf(x);if(!m.has(k))m.set(k,[]);m.get(k).push(x)});return Array.from(m,e=>({k:e[0],items:e[1]}))}
+function grpImgs(a){const m=new Map();a.forEach(i=>{const k=i.g||('x'+m.size);if(!m.has(k))m.set(k,[]);m.get(k).push(i)});return Array.from(m.values())}
+function grpCap(k,v){const g=oldGroups().find(x=>x.k===k);if(g)g.items.forEach(x=>oldSet(x.id,'caption',v))}
+async function addGrp(k,inp){const files=Array.from(inp.files);inp.value='';
+  for(const f0 of files){try{if(f0.type&&!/^image\//.test(f0.type))throw new Error('bukan file gambar');const f=await shrink(f0);if(f.size>MAXB)throw new Error('melebihi 5 MB setelah dikompres');ADD.push({gk:k,file:f,url:URL.createObjectURL(f)});rOld()}catch(e){msg('Foto "'+f0.name+'" tidak bisa diproses: '+(e.message||e))}}}
+function rmAdd(i){const it=ADD.splice(i,1)[0];rOld();toast('Foto dihapus dari daftar',()=>{ADD.splice(i,0,it);rOld()})}
+function rmGrp(k){const g=oldGroups().find(x=>x.k===k);if(!g)return;const pos=g.items.map(x=>[x,OLD.indexOf(x)]),ad=ADD.filter(a=>a.gk===k);ADD=ADD.filter(a=>a.gk!==k);
+  g.items.forEach(x=>{DEL.push(x);OLD.splice(OLD.indexOf(x),1)});rOld();rPh();
+  toast('Gambar dihapus (berlaku saat Simpan Perubahan)',()=>{DEL=DEL.filter(x=>!g.items.includes(x));pos.forEach(p=>OLD.splice(p[1],0,p[0]));ADD=ADD.concat(ad);rOld();rPh()})}
+function grpHtml(g,n){const k=g.k,ad=ADD.map((a,i)=>({a:a,i:i})).filter(o=>o.a.gk===k);
+  const ph=g.items.map(x=>'<div><button class="x" title="Hapus foto ini" onclick="rmOld(\''+x.id+'\')">×</button><img src="'+(x._new?x._new.url:x.src)+'"><div class="bar" style="margin-top:4px"><button class="btn g" onclick="editImg(\'old\',\''+x.id+'\')">✏️</button><button class="btn g" onclick="$(\'rp-'+x.id+'\').click()">🔄</button>'+(x._new?'<button class="btn g" onclick="cancelRep(\''+x.id+'\')">Batal</button>':'')+'<input type="file" accept="image/*" class="hide" id="rp-'+x.id+'" onchange="repOld(\''+x.id+'\',this)"></div></div>').join('')
+   +ad.map(o=>'<div><span class="tg In" style="position:absolute;left:4px;top:4px;z-index:2">baru</span><button class="x" title="Hapus foto ini" onclick="rmAdd('+o.i+')">×</button><img src="'+o.a.url+'"><div class="bar" style="margin-top:4px"><button class="btn g" onclick="editImg(\'add\','+o.i+')">✏️ Edit</button></div></div>').join('');
+  return '<div class="pf"><b>Gambar '+(n+1)+' <span class="mu">('+(g.items.length+ad.length)+' foto)</span></b><div class="th">'+ph+'</div><label>Penjelasan / deskripsi Gambar '+(n+1)+'</label><textarea placeholder="Jelaskan isi gambar ini…" oninput="grpCap(\''+k+'\',this.value)">'+esc(g.items[0].caption||'')+'</textarea><div class="bar" style="margin-top:8px"><button class="btn g" onclick="$(\'ga-'+k+'\').click()">➕ Tambah Foto</button><button class="btn r" onclick="rmGrp(\''+k+'\')">Hapus Gambar Ini</button><input type="file" accept="image/*" multiple class="hide" id="ga-'+k+'" onchange="addGrp(\''+k+'\',this)"></div></div>'}
 function rOld(){const c=$('oldatt');if(!EID){c.classList.add('hide');return}c.classList.remove('hide');
-  c.innerHTML='<h3>Lampiran Tersimpan</h3>'+OLD.filter(x=>x.attachment_type==='image').map((x,n)=>'<div class="pf"><button class="x" title="Hapus gambar" onclick="rmOld(\''+x.id+'\')">×</button><b>Gambar '+(n+1)+(x._new?' <span class="tg In">foto diubah — berlaku saat disimpan</span>':'')+'</b><img src="'+(x._new?x._new.url:x.src)+'">'
-     +'<label>Penjelasan / deskripsi Gambar '+(n+1)+'</label><textarea placeholder="Jelaskan isi gambar ini…" oninput="oldSet(\''+x.id+'\',\'caption\',this.value)">'+esc(x.caption||'')+'</textarea>'
-     +'<div class="bar" style="margin-top:8px"><button class=\"btn g\" onclick=\"editImg(\'old\',\''+x.id+'\')\">✏️ Edit Foto</button><button class="btn g" onclick="$(\'rp-'+x.id+'\').click()">🔄 Ganti Foto</button>'+(x._new?'<button class="btn g" onclick="cancelRep(\''+x.id+'\')">Batal ganti</button>':'')+'<input type="file" accept="image/*" class="hide" id="rp-'+x.id+'" onchange="repOld(\''+x.id+'\',this)"></div></div>').join('')
+  c.innerHTML='<h3>Lampiran Tersimpan</h3>'+oldGroups().map((g,n)=>grpHtml(g,n)).join('')
    +OLD.filter(x=>x.attachment_type==='link').map(x=>'<div class="lr" style="margin-top:8px"><input placeholder="https://…" value="'+esc(x.url||'')+'" oninput="oldSet(\''+x.id+'\',\'url\',this.value)"><input placeholder="Judul referensi" value="'+esc(x.title||'')+'" oninput="oldSet(\''+x.id+'\',\'title\',this.value)"><input placeholder="Keterangan" value="'+esc(x.caption||'')+'" oninput="oldSet(\''+x.id+'\',\'caption\',this.value)"><button class="btn r" onclick="rmOld(\''+x.id+'\')">×</button></div>').join('')
    +'<p class="mu" style="margin-top:8px">Keterangan, foto (Edit Foto / Ganti Foto), dan link bisa diubah langsung; tekan × untuk menghapus. Semua berlaku saat Simpan Perubahan.</p>'}
 function rmOld(id){const i=OLD.findIndex(x=>x.id===id);if(i<0)return;const it=OLD[i];DEL.push(it);OLD.splice(i,1);rOld();rPh();
@@ -324,7 +345,7 @@ function caUpd(){const c=$('toasts'),n=c.querySelectorAll('.tt').length;let b=$(
   else if(b)b.remove()}
 function refresh(){esearch();if(!$('v-mes').classList.contains('hide'))load();if(!$('v-trash').classList.contains('hide'))loadTrash();if(!$('v-det').classList.contains('hide'))nav('mes')}
 function delErr(){if(EID)softDel(EID,$('e-title').value)}
-async function softDel(id,title){const r=await db.from('machine_errors').update({deleted_at:new Date().toISOString()}).eq('id',id);
+async function softDel(id,title){if(!confirm('Yakin ingin menghapus error "'+(title||'ini')+'"?\n\nData akan dipindahkan ke Tempat Sampah (bisa dipulihkan dalam 30 hari).'))return;const r=await db.from('machine_errors').update({deleted_at:new Date().toISOString()}).eq('id',id);
   if(r.error)return msg('Gagal menghapus: '+r.error.message+' (sudah menjalankan trash.sql?)');
   if(EID===id)resetForm();refresh();
   toast('“'+(title||'Error')+'” dipindahkan ke Tempat Sampah',async()=>{const u=await db.from('machine_errors').update({deleted_at:null}).eq('id',id);if(u.error)msg('Gagal mengurungkan: '+u.error.message);else{msg('Error dikembalikan.',true);refresh()}})}
@@ -342,7 +363,7 @@ async function loadTrash(){const v=$('v-trash');
    return '<tr><td><b>'+esc(e.title)+'</b> '+(e.error_code?'<span class="tg">'+esc(e.error_code)+'</span>':'')+'</td><td>'+esc(e.machine_name||'—')+'<div class="mu">'+esc(e.category||'')+'</div></td><td>'+new Date(e.deleted_at).toLocaleDateString('id-ID')+'</td><td>'+left+' hari</td><td style="white-space:nowrap"><button class="btn g" data-t="'+esc(e.title)+'" data-a="'+e.deleted_at+'" onclick="restoreErr(\''+e.id+'\',this.dataset.t,this.dataset.a)">↩️ Pulihkan</button> <button class="btn r" data-t="'+esc(e.title)+'" onclick="permDel(\''+e.id+'\',this.dataset.t)">Hapus Permanen</button></td></tr>'}).join('')+'</table></div>':'<div class="card empty">Tempat sampah kosong.</div>')}
 async function restoreErr(id,title,at){const r=await db.from('machine_errors').update({deleted_at:null}).eq('id',id);if(r.error)return msg('Gagal memulihkan: '+r.error.message);loadTrash();esearch();
   toast('“'+title+'” dipulihkan',async()=>{await db.from('machine_errors').update({deleted_at:at}).eq('id',id);loadTrash();esearch()})}
-function permDel(id,title){PEND.add(id);loadTrash();
+function permDel(id,title){if(!confirm('HAPUS PERMANEN "'+(title||'error ini')+'"?\n\nFoto dan datanya akan hilang selamanya dan tidak bisa dikembalikan.'))return;PEND.add(id);loadTrash();
   toast('“'+title+'” dihapus permanen dalam 10 detik',()=>{PEND.delete(id);loadTrash()},async()=>{const r=await purgeOne(id);PEND.delete(id);if(r.error)msg('Gagal hapus permanen: '+r.error.message);loadTrash()})}
 async function save(){const o=formData();if(!o.title)return msg('Judul Error wajib diisi.');o.status=o.status||'Open';
   const lks=LK.filter(l=>l.url.trim());for(const l of lks)if(!vUrl(l.url.trim()))return msg('URL tidak valid: '+l.url);
@@ -354,11 +375,13 @@ async function save(){const o=formData();if(!o.title)return msg('Judul Error waj
     else{step='Memperbarui data error';const r=await db.from('machine_errors').update(o).eq('id',id).select('id');if(r.error)throw r.error;
       if(!r.data||!r.data.length)throw new Error('Perubahan tidak tersimpan: ditolak izin (RLS) atau data sudah dihapus')}
     const rows=[];
-    for(let i=0;i<PH.length;i++){const p=PH[i],ext=(p.file.name.split('.').pop()||'jpg').replace(/[^a-z0-9]/gi,'').toLowerCase()||'jpg';
-      const path=id+'/'+Date.now()+'-'+i+'-'+Math.random().toString(36).slice(2,6)+'.'+ext;
-      step='Upload foto "'+p.file.name+'" ('+(i+1)+'/'+PH.length+', '+Math.round(p.file.size/1024)+' KB)';b.textContent='Upload foto '+(i+1)+'/'+PH.length+'…';
+    const jobs=[];PH.forEach(g=>{const k=Math.random().toString(36).slice(2,10);g.files.forEach(p=>jobs.push({file:p.file,k:k,cap:g.caption||null}))});
+    if(!isNew){const og=oldGroups();ADD.forEach(a=>{const g=og.find(x=>x.k===a.gk);if(g)jobs.push({file:a.file,k:a.gk,cap:g.items[0].caption||null})})}
+    for(let i=0;i<jobs.length;i++){const p=jobs[i],ext=(p.file.name.split('.').pop()||'jpg').replace(/[^a-z0-9]/gi,'').toLowerCase()||'jpg';
+      const path=id+'/g'+p.k+'-'+Date.now()+'-'+i+'-'+Math.random().toString(36).slice(2,6)+'.'+ext;
+      step='Upload foto "'+p.file.name+'" ('+(i+1)+'/'+jobs.length+', '+Math.round(p.file.size/1024)+' KB)';b.textContent='Upload foto '+(i+1)+'/'+jobs.length+'…';
       await upRetry(path,p.file);
-      up.push(path);rows.push({error_id:id,attachment_type:'image',file_path:path,title:p.file.name,caption:p.caption||null})}
+      up.push(path);rows.push({error_id:id,attachment_type:'image',file_path:path,title:p.file.name,caption:p.cap})}
     lks.forEach(l=>rows.push({error_id:id,attachment_type:'link',url:l.url.trim(),title:l.title||null,caption:l.caption||null}));
     if(rows.length){step='Menyimpan data lampiran';const a=await db.from('error_attachments').insert(rows);if(a.error)throw a.error}
     up=[]; /* lampiran sudah tercatat di database: file TIDAK boleh ikut dihapus lagi oleh rollback */
@@ -384,7 +407,7 @@ async function save(){const o=formData();if(!o.title)return msg('Judul Error waj
     const h=why(e);msg('GAGAL pada langkah: '+step+'\nPenyebab: '+(e.message||e)+(h?'\nSolusi: '+h:'')+'\n(form tidak dikosongkan, data Anda aman — coba Simpan lagi)');b.textContent=old;b.disabled=false;return;
   }b.disabled=false}
 async function prevForm(){const o=formData();if(!o.title)return msg('Isi minimal Judul Error.');
-  const imgs=PH.map(p=>({src:p.url,caption:p.caption,title:p.file.name}));
+  const imgs=[];PH.forEach((g,i)=>g.files.forEach(p=>imgs.push({src:p.url,caption:g.caption,title:p.file.name,g:'p'+i})));
   const w=window.open('','_blank');if(w)w.document.write('<p style="font:16px sans-serif;padding:20px">Menyiapkan PDF…</p>');
   try{const d=await mkPdf(o,imgs,LK.filter(l=>vUrl(l.url.trim())),'(draft)');const u=d.output('bloburl');if(w)w.location.href=u;else window.open(u)}catch(x){if(w)w.close();msg('Preview gagal: '+(x.message||x))}}
 
@@ -412,17 +435,21 @@ async function full(id){const[e,a]=await Promise.all([db.from('machine_errors').
   if(e.error)throw e.error;if(a.error)throw a.error;
   const ims=a.data.filter(x=>x.attachment_type!=='link'),lks=a.data.filter(x=>x.attachment_type==='link'),m={};
   if(ims.length){const s=await db.storage.from(BUCKET).createSignedUrls(ims.map(x=>x.file_path),3600);(s.data||[]).forEach(r=>{if(r.signedUrl)m[r.path]=r.signedUrl})}
-  return{e:e.data,imgs:ims.map(x=>({src:m[x.file_path]||null,key:x.file_path,caption:x.caption,title:x.title})),lks}}
+  return{e:e.data,imgs:ims.map(x=>({src:m[x.file_path]||null,key:x.file_path,caption:x.caption,title:x.title,g:gkOf(x)})),lks}}
 async function detail(id){nav('det');const v=$('v-det');v.innerHTML='<div class="empty">Memuat…</div>';
   try{const{e,imgs,lks}=await full(id);imgs.forEach(i=>{if(i.src)loadImg(i.src,i.key).catch(()=>{})});
-  v.innerHTML='<div class="crumb">Beranda / Error MES / Detail</div><h2>'+esc(e.title)+(e.error_code?' <span class="tg">'+esc(e.error_code)+'</span>':'')+'</h2><div class="bar" style="margin:0 0 12px"><button class="btn g" onclick="nav(\'mes\')">← Kembali ke Error MES</button><button class="btn g" onclick="pdfOf(\''+id+'\',0)">Preview PDF</button><button class="btn" onclick="pdfOf(\''+id+'\',1)">Download PDF</button><button class="btn r" data-t="'+esc(e.title)+'" onclick="softDel(\''+id+'\',this.dataset.t)">🗑️ Hapus</button></div><div class="card"><dl class="dt"><dt>ID</dt><dd>'+id+'</dd>'
+  v.innerHTML='<div class="crumb">Beranda / Error MES / Detail</div><h2>'+esc(e.title)+(e.error_code?' <span class="tg">'+esc(e.error_code)+'</span>':'')+'</h2><div class="bar" style="margin:0 0 12px"><button class="btn g" onclick="nav(\'mes\')">← Kembali ke Error MES</button><button class="btn g" onclick="pdfOf(\''+id+'\',0)">Preview PDF</button><button class="btn" onclick="pdfOf(\''+id+'\',1)">Download PDF</button>'+fsHtml()+'<button class="btn r" data-t="'+esc(e.title)+'" onclick="softDel(\''+id+'\',this.dataset.t)">🗑️ Hapus</button></div><div class="card"><dl class="dt"><dt>ID</dt><dd>'+id+'</dd>'
    +Object.keys(LBL).filter(k=>k!=='title'&&k!=='error_code').map(k=>{let v=e[k];if(k==='occurred_at'&&v)v=new Date(v).toLocaleString('id-ID');return v?'<dt>'+LBL[k]+'</dt><dd>'+esc(v)+'</dd>':''}).join('')
-   +'</dl></div>'+(imgs.length?'<div class="card"><h3>Foto Error</h3>'+imgs.map((i,n)=>'<div class="pf"><b>Gambar '+(n+1)+'</b>'+(i.src?'<a href="'+i.src+'" target="_blank"><img src="'+i.src+'"></a>':'<span class="mu">Foto tidak dapat diakses</span>')+'<div class="sn">'+esc(i.caption||'Tidak ada keterangan')+'</div></div>').join('')+'</div>':'')
+   +'</dl></div>'+(imgs.length?'<div class="card"><h3>Foto Error</h3>'+grpImgs(imgs).map((g,n)=>'<div class="pf"><b>Gambar '+(n+1)+'</b>'+g.map(i=>i.src?'<a href="'+i.src+'" target="_blank"><img src="'+i.src+'" style="margin-bottom:6px"></a>':'<span class="mu">Foto tidak dapat diakses</span>').join('')+'<div class="sn">'+esc(g[0].caption||'Tidak ada keterangan')+'</div></div>').join('')+'</div>':'')
    +(lks.length?'<div class="card"><h3>Link Referensi</h3>'+lks.map(l=>'<p><a href="'+esc(l.url)+'" target="_blank" rel="noopener">'+esc(l.title||l.url)+'</a><br><span class="mu">'+esc(l.caption||'')+'</span></p>').join('')+'</div>':'');
   }catch(x){v.innerHTML='<div class="empty" style="color:var(--red)">Gagal memuat: '+esc(x.message)+'</div>'}}
 
 /* ===== PDF ===== */
 /* Foto diperkecil (maks 1400px, JPEG 80%) sebelum masuk PDF -> PDF kecil & cepat dibuat */
+let PFS=1.2;try{const v=parseFloat(localStorage.getItem('pdfFs'));if(v>=1&&v<=2)PFS=v}catch(_){}
+function fsHtml(){return '<label style="display:flex;align-items:center;gap:6px;margin:0;white-space:nowrap">Ukuran font PDF <select class="fss" onchange="setFs(this.value)" style="width:auto">'+[[1,'Normal'],[1.2,'Besar'],[1.4,'Lebih besar'],[1.6,'Sangat besar']].map(o=>'<option value="'+o[0]+'"'+(o[0]===PFS?' selected':'')+'>'+o[1]+'</option>').join('')+'</select></label>'}
+function setFs(v){PFS=parseFloat(v)||1.2;try{localStorage.setItem('pdfFs',String(PFS))}catch(_){}document.querySelectorAll('.fss').forEach(s=>s.value=String(PFS))}
+function fsInit(){document.querySelectorAll('.fsw').forEach(e=>e.innerHTML=fsHtml())}
 const IMGC=new Map(),PDFC=new Map();
 function loadImg(src,key){key=key||src;if(IMGC.has(key))return IMGC.get(key);
   const pr=(async()=>{const r=await fetch(src);if(!r.ok)throw 0;const b=await r.blob();let bm;
@@ -457,7 +484,7 @@ async function mkPdf(e,imgs,lks,idTxt){const{jsPDF}=window.jspdf;const d=new jsP
   const LD=await Promise.all(imgs.map(im=>im.src?loadImg(im.src,im.key).catch(()=>null):null));await FP; /* foto & font diunduh paralel */
   const brk=h=>{if(y+h>285){d.addPage();y=20}};
   /* tulis paragraf (auto-wrap, auto page-break); otomatis pilih jalur native / canvas */
-  const para=(txt,o={})=>{const size=o.size||10,st=o.st||'normal',col=o.col||[20,20,20],lh=o.lh||4.7,x=o.x==null?M:o.x,mw=o.w||(CW-(x-M));
+  const para=(txt,o={})=>{const size=(o.size||10)*PFS,st=o.st||'normal',col=o.col||[20,20,20],lh=(o.lh||4.7)*PFS,x=o.x==null?M:o.x,mw=o.w||(CW-(x-M));
     String(txt==null?'':txt).replace(/\r/g,'').replace(/\t/g,'    ').split('\n').forEach(p=>{
       if(!p.trim()){brk(lh);y+=lh;return}
       const cv=needCv(p);let lines;
@@ -467,13 +494,17 @@ async function mkPdf(e,imgs,lks,idTxt){const{jsPDF}=window.jspdf;const d=new jsP
   d.setFillColor(18,48,90);d.rect(0,0,W,16,'F');d.setTextColor(255);d.setFontSize(12);d.setFont('helvetica','bold');d.text('ERROR MES — Dokumentasi Error Mesin',M,10);y=26;d.setTextColor(20);
   para(e.title,{size:16,st:'bold',lh:7});y+=2;
   const meta=[['Kode Error',e.error_code],['ID Dokumentasi',idTxt],['Nama Mesin',e.machine_name],['Lokasi / Line',e.production_line],['Kategori',e.category],['Tanggal Kejadian',e.occurred_at?new Date(e.occurred_at).toLocaleString('id-ID'):''],['Status',e.status]];
-  meta.forEach(m=>{brk(6);d.setFont('helvetica','bold');d.setFontSize(10);d.setTextColor(20);d.text(m[0],M,y);para(': '+(m[1]||'-'),{x:M+38,lh:6})});
+  meta.forEach(m=>{brk(6);d.setFont('helvetica','bold');d.setFontSize(10*PFS);d.setTextColor(20);d.text(m[0],M,y);para(': '+(m[1]||'-'),{x:M+38,lh:6})});
   const sec=(h,txt)=>{head(h,5.5);para(txt||'-')};
   sec('Deskripsi Error',e.description);sec('Gejala yang Ditemukan',e.symptoms);if(e.alarm_message)sec('Alarm / Pesan',e.alarm_message);
   head('Foto Error',6);
   if(!imgs.length)para('-');
-  let gi=0;for(const im of imgs){gi++;try{const L=LD[gi-1];if(!L)throw 0;let w=CW,h=w*L.h/L.w;if(h>95){h=95;w=h*L.w/L.h}brk(h+24);d.setFont('helvetica','bold');d.setFontSize(10);d.setTextColor(20);d.text('Gambar '+gi,M,y);y+=4.5;d.addImage(L.d,L.t,M,y,w,h,undefined,'FAST');y+=h+4;
-    para(im.caption||'Tidak ada keterangan',{size:9,st:'italic',lh:4.3});y+=4}catch(x){fail.push(im.title||'foto')}}
+  const LDm=new Map(imgs.map((im,i)=>[im,LD[i]]));let gn=0;
+  for(const grp of grpImgs(imgs)){gn++;let first=true;
+    for(const im of grp){try{const L=LDm.get(im);if(!L)throw 0;let w=CW,h=w*L.h/L.w;if(h>95){h=95;w=h*L.w/L.h}brk(h+(first?24:8));
+      if(first){d.setFont('helvetica','bold');d.setFontSize(10);d.setTextColor(20);d.text('Gambar '+gn+(grp.length>1?' ('+grp.length+' foto)':''),M,y);y+=4.5;first=false}
+      d.addImage(L.d,L.t,M,y,w,h,undefined,'FAST');y+=h+4}catch(x){fail.push(im.title||'foto')}}
+    para(grp[0].caption||'Tidak ada keterangan',{size:10,st:'italic',lh:4.5});y+=4}
   head('Link Referensi',5.5);
   if(!lks.length)para('-');
   lks.forEach(l=>{brk(11);const tt=l.title||l.url;
@@ -485,10 +516,10 @@ async function mkPdf(e,imgs,lks,idTxt){const{jsPDF}=window.jspdf;const d=new jsP
   if(fail.length)alert('Peringatan: foto berikut tidak dapat dimuat dan TIDAK masuk PDF:\n- '+fail.join('\n- '));
   return d}
 async function pdfOf(id,dl){let w=null;if(!dl){w=window.open('','_blank');if(w)w.document.write('<p style="font:16px sans-serif;padding:20px">Menyiapkan PDF…</p>')}
-  try{msg('Menyiapkan PDF…',true);const{e,imgs,lks}=await full(id);const ck=JSON.stringify([e,imgs.map(i=>[i.key,i.caption]),lks.map(l=>[l.url,l.title,l.caption])]);let d=PDFC.get(id);if(!d||d.k!==ck){d=await mkPdf(e,imgs,lks,id.slice(0,8).toUpperCase());d.k=ck;PDFC.set(id,d);if(PDFC.size>6)PDFC.delete(PDFC.keys().next().value)}
+  try{msg('Menyiapkan PDF…',true);const{e,imgs,lks}=await full(id);const ck=JSON.stringify([PFS,e,imgs.map(i=>[i.key,i.caption]),lks.map(l=>[l.url,l.title,l.caption])]);let d=PDFC.get(id);if(!d||d.k!==ck){d=await mkPdf(e,imgs,lks,id.slice(0,8).toUpperCase());d.k=ck;PDFC.set(id,d);if(PDFC.size>6)PDFC.delete(PDFC.keys().next().value)}
   if(dl)d.save((e.error_code?e.error_code+' - ':'')+e.title.replace(/[\\/:*?"<>|]/g,'')+'.pdf');else{const u=d.output('bloburl');if(w)w.location.href=u;else window.open(u)}
   $('msg').className='hide'}catch(x){if(w)w.close();msg('PDF gagal: '+(x.message||x))}}
-init();
+init();fsInit();
 if(document.fonts)setTimeout(()=>{try{document.fonts.load('400 16px "Noto Sans SC"','中');document.fonts.load('700 16px "Noto Sans SC"','中')}catch(_){}},1500); /* pemanasan font Mandarin agar PDF tidak menunggu */
 </script>
 </body>
