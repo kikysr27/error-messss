@@ -93,10 +93,10 @@ body.ru .nv[data-v="cat"],body.ru .nv[data-v="trash"],body.ru .nv[data-v="acc"]{
 
 <section id="v-mes" class="hide"><div class="crumb">Beranda / Error MES</div><h2>Error MES</h2>
 <div class="card"><label>🔍 Smart Search (gejala, kode, mesin, penyebab, solusi…)</label><input id="q" placeholder="cth: servo tidak bergerak / AL-52" oninput="deb(apply)">
-<details id="flt" open style="margin-top:10px"><summary style="cursor:pointer;font-weight:700;color:var(--nav);padding:6px 0">⚙️ Filter (kategori, mesin, line, status, tanggal)</summary><div class="g2 fg" style="margin-top:8px">
+<details id="flt" open style="margin-top:10px"><summary style="cursor:pointer;font-weight:700;color:var(--nav);padding:6px 0">⚙️ Filter (kategori, mesin, line, kode, status)</summary><div class="g2 fg" style="margin-top:8px">
 <div><label>Kategori</label><select id="f-cat" onchange="apply()"></select></div><div><label>Nama mesin</label><input id="f-mc" oninput="deb(apply)"></div><div><label>Lokasi / Line</label><input id="f-ln" oninput="deb(apply)"></div>
 <div><label>Kode error</label><input id="f-cd" oninput="deb(apply)"></div><div><label>Status</label><select id="f-st" onchange="apply()"><option value="">Semua</option><option>Open</option><option>In Progress</option><option>Resolved</option></select></div>
-<div><label>Tanggal awal</label><input type="date" id="f-d1" onchange="apply()"></div><div><label>Tanggal akhir</label><input type="date" id="f-d2" onchange="apply()"></div></div>
+</div>
 <div class="bar"><button class="btn" onclick="apply()">Terapkan Filter</button><button class="btn g" onclick="resetF()">Reset Filter</button></div></details></div>
 <div class="bar" style="margin:0 0 10px"><span class="fsw"></span></div><div class="card" id="lst"></div><div class="bar" id="pg" style="justify-content:center"></div></section>
 
@@ -341,7 +341,7 @@ async function editErr(id){try{
   FIELDS.forEach(s=>s[1].forEach(f=>{let v=d[f[0]];if(f[0]==='occurred_at'&&v){const x=new Date(v);v=new Date(x-x.getTimezoneOffset()*6e4).toISOString().slice(0,16)}$('e-'+f[0]).value=v||(f[0]==='status'?'Open':'')}));
   await Promise.all(a.data.map(async x=>{if(x.attachment_type==='image'){try{const u=await db.storage.from(BUCKET).createSignedUrl(x.file_path,3600);x.src=u.data?u.data.signedUrl:''}catch(_){x.src=''}}}));
   a.data.forEach(x=>OLD.push(x));
-  rOld();rPh();$('ebanner').innerHTML='✏️ <b>Mode Edit:</b> '+esc(d.title)+' <span class="mu">(ID '+id.slice(0,8).toUpperCase()+')</span><div class="bar"><button class="btn g" onclick="resetForm()">Batal Edit</button><button class="btn r" onclick="delErr()">🗑️ Hapus Error Ini</button></div>';
+  rOld();rPh();$('ebanner').innerHTML='✏️ <b>Mode Edit:</b> '+esc(d.title)+'<div class="bar"><button class="btn g" onclick="resetForm()">Batal Edit</button><button class="btn r" onclick="delErr()">🗑️ Hapus Error Ini</button></div>';
   $('ebanner').classList.remove('hide');$('sv').textContent='💾 Simpan Perubahan';$('ebanner').scrollIntoView({behavior:'smooth'})
 }catch(x){const h=why(x);msg('Gagal membuka data untuk diedit: '+(x.message||x)+(h?'\nSolusi: '+h:''))}}
 function toast(txt,onUndo,onEnd){const d=document.createElement('div');d.className='tt';d.innerHTML='<span>'+esc(txt)+'</span><button class="u">Urungkan</button><button class="cl" title="Tutup">✕</button><i></i>';$('toasts').appendChild(d);
@@ -421,7 +421,7 @@ async function save(){const o=formData();if(!o.title)return msg('Judul Error waj
         const p=DEL.filter(x=>x.file_path&&gone.has(x.id)).map(x=>x.file_path);if(p.length){const rm=await db.storage.from(BUCKET).remove(p);if(rm.error)console.warn(rm.error)}
         if(gone.size<DEL.length)warn+=' PERHATIAN: '+(DEL.length-gone.size)+' lampiran lama gagal dihapus (ditolak izin/RLS) — hapus ulang lewat Edit.'}
       catch(x){warn+=' PERHATIAN: lampiran lama gagal dihapus ('+(x.message||x)+').'}}
-    if(warn)msg('Tersimpan, tetapi:'+warn);else msg(isNew?'Tersimpan. ID Error: '+id.slice(0,8).toUpperCase()+' ('+id+')':'Perubahan tersimpan.',true);
+    if(warn)msg('Tersimpan, tetapi:'+warn);else msg(isNew?'Tersimpan.':'Perubahan tersimpan.',true);
     resetForm();esearch();
   }catch(e){
     if(up.length)await db.storage.from(BUCKET).remove(up);
@@ -440,15 +440,15 @@ function tok(raw){const w=[...new Set((raw.toLowerCase().match(/[a-z0-9][a-z0-9.
 function srch(raw,f,lim,off){raw=raw.trim().replace(/[%_\\]/g,'');const t=tok(raw);
   return db.rpc('search_errors',Object.assign({p_words:t.w,p_syn:t.s,p_raw:raw,p_cat:'',p_machine:'',p_line:'',p_status:'',p_code:'',p_from:null,p_to:null,p_limit:lim,p_offset:off},f||{}))}
 function apply(){page=0;load()}
-function resetF(){['q','f-cat','f-mc','f-ln','f-cd','f-st','f-d1','f-d2'].forEach(i=>$(i).value='');apply()}
+function resetF(){['q','f-cat','f-mc','f-ln','f-cd','f-st'].forEach(i=>$(i).value='');apply()}
 async function load(){const my=++SEQ;const raw=$('q').value.trim();
-  const r=await srch(raw,{p_cat:$('f-cat').value,p_machine:$('f-mc').value.trim(),p_line:$('f-ln').value.trim(),p_status:$('f-st').value,p_code:$('f-cd').value.trim(),p_from:$('f-d1').value||null,p_to:$('f-d2').value||null},PER,page*PER);
+  const r=await srch(raw,{p_cat:$('f-cat').value,p_machine:$('f-mc').value.trim(),p_line:$('f-ln').value.trim(),p_status:$('f-st').value,p_code:$('f-cd').value.trim(),p_from:null,p_to:null},PER,page*PER);
   if(my!==SEQ)return;
   if(r.error){$('lst').innerHTML='<div class="empty" style="color:var(--red)">Gagal memuat: '+esc(r.error.message)+'<br>Pastikan setup.sql, setup-tanpa-login.sql dan update-search.sql sudah dijalankan.</div>';return}
   const d=r.data;TOT=d.length?Number(d[0].total):0;
   if(!d.length){$('lst').innerHTML='<div class="empty">Tidak ditemukan dokumentasi error yang cocok. Silakan periksa kata kunci atau catat error baru melalui menu Catat Error.<div class="bar" style="justify-content:center"><button class="btn" onclick="nav(\'cat\')">Ke Catat Error</button></div></div>';$('pg').innerHTML='';return}
-  $('lst').innerHTML='<table><tr><th>ID</th><th>Error</th><th>Mesin / Line</th><th>Kategori</th><th>Tanggal</th><th>Status</th><th></th></tr>'+d.map(e=>
-   '<tr><td class="mu">'+e.id.slice(0,8).toUpperCase()+'</td><td><b>'+esc(e.title)+'</b> '+(e.error_code?'<span class="tg">'+esc(e.error_code)+'</span>':'')
+  $('lst').innerHTML='<table><tr><th>Error</th><th>Mesin / Line</th><th>Kategori</th><th>Tanggal</th><th>Status</th><th></th></tr>'+d.map(e=>
+   '<tr><td><b>'+esc(e.title)+'</b> '+(e.error_code?'<span class="tg">'+esc(e.error_code)+'</span>':'')
    +(raw?'<div class="sn"><b>Gejala:</b> '+esc((e.symptoms||'—').slice(0,140))+'<br><b>Penyebab terdokumentasi:</b> '+esc((e.cause_analysis||'—').slice(0,140))+'<br><b>Solusi sebelumnya:</b> '+esc((e.solution||'—').slice(0,140))+'<br><span class="mu">Skor kecocokan: '+Number(e.rank).toFixed(2)+' · verifikasi dulu pada kondisi mesin saat ini</span></div>':'')
    +'</td><td>'+esc(e.machine_name||'—')+'<div class="mu">'+esc(e.production_line||'')+'</div></td><td>'+esc(e.category||'—')+'</td><td>'+(e.occurred_at?new Date(e.occurred_at).toLocaleDateString('id-ID'):'—')+'</td><td><span class="tg '+(e.status==='In Progress'?'In':e.status)+'">'+e.status+'</span></td>'
    +'<td style="white-space:nowrap"><button class="btn g" onclick="detail(\''+e.id+'\')">Detail</button> <button class="btn g" onclick="pdfOf(\''+e.id+'\',0)">Preview PDF</button> <button class="btn g" onclick="pdfOf(\''+e.id+'\',1)">⬇ PDF</button> <button class="btn r" title="Hapus" data-t="'+esc(e.title)+'" onclick="softDel(\''+e.id+'\',this.dataset.t)">🗑️</button></td></tr>').join('')+'</table>';
@@ -460,7 +460,7 @@ async function full(id){const[e,a]=await Promise.all([db.from('machine_errors').
   return{e:e.data,imgs:ims.map(x=>({src:m[x.file_path]||null,key:x.file_path,caption:x.caption,title:x.title,g:gkOf(x)})),lks}}
 async function detail(id){nav('det');const v=$('v-det');v.innerHTML='<div class="empty">Memuat…</div>';
   try{const{e,imgs,lks}=await full(id);imgs.forEach(i=>{if(i.src)loadImg(i.src,i.key).catch(()=>{})});
-  v.innerHTML='<div class="crumb">Beranda / Error MES / Detail</div><h2>'+esc(e.title)+(e.error_code?' <span class="tg">'+esc(e.error_code)+'</span>':'')+'</h2><div class="bar" style="margin:0 0 12px"><button class="btn g" onclick="nav(\'mes\')">← Kembali ke Error MES</button><button class="btn g" onclick="pdfOf(\''+id+'\',0)">Preview PDF</button><button class="btn" onclick="pdfOf(\''+id+'\',1)">Download PDF</button>'+fsHtml()+'<button class="btn r" data-t="'+esc(e.title)+'" onclick="softDel(\''+id+'\',this.dataset.t)">🗑️ Hapus</button></div><div class="card"><dl class="dt"><dt>ID</dt><dd>'+id+'</dd>'
+  v.innerHTML='<div class="crumb">Beranda / Error MES / Detail</div><h2>'+esc(e.title)+(e.error_code?' <span class="tg">'+esc(e.error_code)+'</span>':'')+'</h2><div class="bar" style="margin:0 0 12px"><button class="btn g" onclick="nav(\'mes\')">← Kembali ke Error MES</button><button class="btn g" onclick="pdfOf(\''+id+'\',0)">Preview PDF</button><button class="btn" onclick="pdfOf(\''+id+'\',1)">Download PDF</button>'+fsHtml()+'<button class="btn r" data-t="'+esc(e.title)+'" onclick="softDel(\''+id+'\',this.dataset.t)">🗑️ Hapus</button></div><div class="card"><dl class="dt">'
    +Object.keys(LBL).filter(k=>k!=='title'&&k!=='error_code').map(k=>{let v=e[k];if(k==='occurred_at'&&v)v=new Date(v).toLocaleString('id-ID');return v?'<dt>'+LBL[k]+'</dt><dd>'+esc(v)+'</dd>':''}).join('')
    +'</dl></div>'+(imgs.length?'<div class="card"><h3>Foto Error</h3>'+grpImgs(imgs).map((g,n)=>'<div class="pf"><b>Step '+(n+1)+'</b>'+g.map(i=>i.src?'<a href="'+i.src+'" target="_blank"><img src="'+i.src+'" style="margin-bottom:6px"></a>':'<span class="mu">Foto tidak dapat diakses</span>').join('')+'<div class="sn">'+esc(g[0].caption||'Tidak ada keterangan')+'</div></div>').join('')+'</div>':'')
    +(lks.length?'<div class="card"><h3>Link Referensi</h3>'+lks.map(l=>'<p><a href="'+esc(l.url)+'" target="_blank" rel="noopener">'+esc(l.title||l.url)+'</a><br><span class="mu">'+esc(l.caption||'')+'</span></p>').join('')+'</div>':'');
@@ -515,7 +515,7 @@ async function mkPdf(e,imgs,lks,idTxt){const{jsPDF}=window.jspdf;const d=new jsP
   const head=(h,gap)=>{brk(14);y+=3;d.setFont('helvetica','bold');d.setFontSize(11);d.setTextColor(18,48,90);d.text(h,M,y);y+=gap;d.setTextColor(20)};
   d.setFillColor(18,48,90);d.rect(0,0,W,16,'F');d.setTextColor(255);d.setFontSize(12);d.setFont('helvetica','bold');d.text('ERROR MES — Dokumentasi Error Mesin',M,10);y=26;d.setTextColor(20);
   para(e.title,{size:16,st:'bold',lh:7});y+=2;
-  const meta=[['Kode Error',e.error_code],['ID Dokumentasi',idTxt],['Nama Mesin',e.machine_name],['Lokasi / Line',e.production_line],['Kategori',e.category],['Tanggal Kejadian',e.occurred_at?new Date(e.occurred_at).toLocaleString('id-ID'):''],['Status',e.status]];
+  const meta=[['Kode Error',e.error_code],['Nama Mesin',e.machine_name],['Lokasi / Line',e.production_line],['Kategori',e.category],['Tanggal Kejadian',e.occurred_at?new Date(e.occurred_at).toLocaleString('id-ID'):''],['Status',e.status]];
   meta.forEach(m=>{brk(6);d.setFont('helvetica','bold');d.setFontSize(10*PFS);d.setTextColor(20);d.text(m[0],M,y);para(': '+(m[1]||'-'),{x:M+38,lh:6})});
   const sec=(h,txt)=>{head(h,5.5);para(txt||'-')};
   sec('Deskripsi Error',e.description);sec('Gejala yang Ditemukan',e.symptoms);if(e.alarm_message)sec('Alarm / Pesan',e.alarm_message);
