@@ -58,6 +58,18 @@ tr{border:1px solid var(--bd);border-radius:10px;padding:10px;margin-bottom:10px
 td:last-child{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;white-space:normal!important}td:last-child .btn{flex:1;min-width:90px;text-align:center}
 #toasts{left:10px;right:10px;bottom:84px}.tt{max-width:none}#msg{left:10px;right:10px;bottom:84px;max-width:none}
 }
+
+#ied{position:fixed;inset:0;background:rgba(10,18,32,.92);z-index:90;display:flex;flex-direction:column}
+#ied .tb{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:10px 12px;background:#0f2442;color:#fff}
+#ied .tb .btn{padding:7px 10px}#ied .tb .btn.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+#ied .tb label{color:#cbd5e1;margin:0;display:flex;align-items:center;gap:5px;font-size:12px}
+#ied .tb input[type=range]{width:90px;padding:0}#ied .tb input[type=color]{width:34px;height:30px;padding:1px}
+#ied .tb .sp{flex:1}
+#iew{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:12px;position:relative}
+#iwrap{position:relative;line-height:0;max-width:100%;max-height:100%;background:repeating-conic-gradient(#e5e7eb 0 25%,#fff 0 50%) 0 0/16px 16px}
+#iwrap canvas{display:block;max-width:calc(100vw - 24px);max-height:calc(100vh - 150px);touch-action:none}
+#iov{position:absolute;left:0;top:0;width:100%;height:100%;cursor:crosshair}
+#ihint{color:#cbd5e1;text-align:center;font-size:12px;padding:6px 10px 10px}
 </style>
 </head>
 <body>
@@ -91,6 +103,15 @@ td:last-child{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;white-space:nor
 <section id="v-acc" class="hide"></section>
 <section id="v-det" class="hide"></section>
 </main>
+<div id="ied" class="hide"><div class="tb">
+<button class="btn g" onclick="ieRot(-90)" title="Putar kiri">⟲ Kiri</button><button class="btn g" onclick="ieRot(90)" title="Putar kanan">⟳ Kanan</button><button class="btn g" onclick="ieFlip()" title="Balik horizontal">⇋ Balik</button>
+<button class="btn g" id="ie-crop" onclick="ieMode('crop')">✂ Potong</button><button class="btn g" id="ie-pen" onclick="ieMode('pen')">✏️ Coret</button><button class="btn g" id="ie-box" onclick="ieMode('box')">▭ Kotak</button>
+<label>Warna <input type="color" id="ie-col" value="#ef4444"></label><label>Tebal <input type="range" id="ie-w" min="1" max="12" value="4"></label>
+<label>Terang <input type="range" id="ie-br" min="50" max="150" value="100" oninput="ieFx()"></label><label>Kontras <input type="range" id="ie-ct" min="50" max="150" value="100" oninput="ieFx()"></label>
+<button class="btn g" onclick="ieUndo()">↩ Urungkan</button><button class="btn g" onclick="ieReset()">Reset</button><span class="sp"></span>
+<button class="btn g" onclick="ieClose()">Batal</button><button class="btn" id="ie-ok" onclick="ieApply()">✔ Terapkan</button></div>
+<div id="iew"><div id="iwrap"><canvas id="icv"></canvas><canvas id="iov"></canvas></div></div>
+<div id="ihint">Putar / potong / coret foto, lalu tekan <b>Terapkan</b>. Perubahan foto lama baru tersimpan saat <b>Simpan Perubahan</b>.</div></div>
 <div id="msg" class="hide"></div><div id="toasts"></div>
 
 <script>
@@ -173,6 +194,64 @@ function logout(){db.auth.signOut().then(()=>location.reload())}
 function nav(v){['cat','mes','det','trash','acc'].forEach(x=>$('v-'+x).classList.toggle('hide',x!==v));
   document.querySelectorAll('.nv').forEach(n=>n.classList.toggle('on',n.dataset.v===(v==='det'?'mes':v)));if(v==='mes')load();if(v==='cat')esearch();if(v==='trash')loadTrash();if(v==='acc')loadAcc()}
 
+
+/* ===== EDITOR FOTO ===== */
+let IE=null;
+async function ieLoad(src){const r=await fetch(src);if(!r.ok)throw new Error('foto tidak bisa dimuat');const b=await r.blob();
+  let bm;try{bm=await createImageBitmap(b)}catch(_){bm=await decodeImg(b)}
+  const w=bm.width||bm.naturalWidth,h=bm.height||bm.naturalHeight,k=Math.min(1,1920/Math.max(w,h)),c=document.createElement('canvas');
+  c.width=Math.max(1,Math.round(w*k));c.height=Math.max(1,Math.round(h*k));const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.drawImage(bm,0,0,c.width,c.height);if(bm.close)bm.close();return c}
+function ieClone(c){const n=document.createElement('canvas');n.width=c.width;n.height=c.height;n.getContext('2d').drawImage(c,0,0);return n}
+async function editImg(kind,ref){let src,name='foto.jpg',tgt;
+  if(kind==='ph'){tgt=PH[ref];if(!tgt)return;src=tgt.url;name=tgt.file.name}
+  else{tgt=OLD.find(o=>o.id===ref);if(!tgt)return;src=tgt._new?tgt._new.url:tgt.src;name=(tgt._new?tgt._new.file.name:tgt.title)||name}
+  if(!src)return msg('Foto belum bisa dimuat, coba lagi sebentar.');
+  try{msg('Membuka editor foto…',true);const c=await ieLoad(src);$('msg').className='hide';
+    IE={kind:kind,ref:ref,name:name,orig:ieClone(c),cv:c,hist:[],mode:'',rect:null};
+    $('ie-br').value=100;$('ie-ct').value=100;$('ied').classList.remove('hide');document.body.style.overflow='hidden';ieMode('');ieDraw()}
+  catch(e){msg('Editor foto gagal dibuka: '+(e.message||e))}}
+function ieDraw(){const c=$('icv'),o=$('iov');c.width=o.width=IE.cv.width;c.height=o.height=IE.cv.height;c.getContext('2d').drawImage(IE.cv,0,0);ieFx();ieOv()}
+function ieFx(){$('icv').style.filter='brightness('+$('ie-br').value+'%) contrast('+$('ie-ct').value+'%)'}
+function iePush(){IE.hist.push(ieClone(IE.cv));if(IE.hist.length>20)IE.hist.shift()}
+function ieBake(){const b=+$('ie-br').value,t=+$('ie-ct').value;if(b===100&&t===100)return;iePush();
+  const n=document.createElement('canvas');n.width=IE.cv.width;n.height=IE.cv.height;const g=n.getContext('2d');g.filter='brightness('+b+'%) contrast('+t+'%)';g.drawImage(IE.cv,0,0);IE.cv=n;
+  $('ie-br').value=100;$('ie-ct').value=100;ieDraw()}
+function ieRot(d){ieBake();iePush();const o=IE.cv,n=document.createElement('canvas');n.width=o.height;n.height=o.width;const g=n.getContext('2d');g.translate(n.width/2,n.height/2);g.rotate(d*Math.PI/180);g.drawImage(o,-o.width/2,-o.height/2);IE.cv=n;IE.rect=null;ieDraw()}
+function ieFlip(){ieBake();iePush();const o=IE.cv,n=document.createElement('canvas');n.width=o.width;n.height=o.height;const g=n.getContext('2d');g.translate(o.width,0);g.scale(-1,1);g.drawImage(o,0,0);IE.cv=n;ieDraw()}
+function ieUndo(){if(!IE.hist.length)return;IE.cv=IE.hist.pop();IE.rect=null;$('ie-br').value=100;$('ie-ct').value=100;ieDraw()}
+function ieReset(){IE.hist=[];IE.cv=ieClone(IE.orig);IE.rect=null;$('ie-br').value=100;$('ie-ct').value=100;ieDraw()}
+function ieMode(m){if(IE&&IE.mode===m&&m==='crop'&&IE.rect){ieCrop();return}
+  if(IE){IE.mode=m;if(m!=='crop')IE.rect=null}['crop','pen','box'].forEach(x=>$('ie-'+x).classList.toggle('on',x===m));
+  $('ie-crop').textContent=(IE&&m==='crop'&&IE.rect)?'✂ Terapkan potongan':'✂ Potong';if(IE)ieOv()}
+function ieOv(){const o=$('iov'),g=o.getContext('2d');g.clearRect(0,0,o.width,o.height);const r=IE.rect;if(!r||IE.mode!=='crop')return;
+  g.fillStyle='rgba(0,0,0,.55)';g.fillRect(0,0,o.width,o.height);g.clearRect(r.x,r.y,r.w,r.h);g.strokeStyle='#fff';g.lineWidth=Math.max(2,o.width/400);g.setLineDash([8,6]);g.strokeRect(r.x,r.y,r.w,r.h)}
+function ieCrop(){const r=IE.rect;if(!r||r.w<8||r.h<8){IE.rect=null;return ieMode('crop')}ieBake();iePush();
+  const n=document.createElement('canvas');n.width=Math.round(r.w);n.height=Math.round(r.h);n.getContext('2d').drawImage(IE.cv,Math.round(r.x),Math.round(r.y),n.width,n.height,0,0,n.width,n.height);IE.cv=n;IE.rect=null;ieDraw();ieMode('')}
+function iePt(e){const o=$('iov'),b=o.getBoundingClientRect();return{x:Math.max(0,Math.min(o.width,(e.clientX-b.left)*o.width/b.width)),y:Math.max(0,Math.min(o.height,(e.clientY-b.top)*o.height/b.height))}}
+(function(){const o=document.getElementById('iov');let dn=false,st=null,base=null;
+  const lw=()=>Math.max(2,+$('ie-w').value*IE.cv.width/500);
+  o.addEventListener('pointerdown',e=>{if(!IE||!IE.mode)return;e.preventDefault();o.setPointerCapture(e.pointerId);dn=true;st=iePt(e);
+    if(IE.mode==='crop'){IE.rect={x:st.x,y:st.y,w:0,h:0}}
+    else{ieBake();iePush();base=ieClone(IE.cv);const g=IE.cv.getContext('2d');g.strokeStyle=$('ie-col').value;g.lineWidth=lw();g.lineCap=g.lineJoin='round';g.setLineDash([]);if(IE.mode==='pen'){g.beginPath();g.moveTo(st.x,st.y);g.lineTo(st.x+.1,st.y+.1);g.stroke()}}});
+  o.addEventListener('pointermove',e=>{if(!dn)return;const p=iePt(e);
+    if(IE.mode==='crop'){IE.rect={x:Math.min(st.x,p.x),y:Math.min(st.y,p.y),w:Math.abs(p.x-st.x),h:Math.abs(p.y-st.y)};ieOv()}
+    else{const g=IE.cv.getContext('2d');
+      if(IE.mode==='pen'){g.lineTo(p.x,p.y);g.stroke()}
+      else{g.clearRect(0,0,IE.cv.width,IE.cv.height);g.drawImage(base,0,0);g.strokeStyle=$('ie-col').value;g.lineWidth=lw();g.setLineDash([]);g.strokeRect(st.x,st.y,p.x-st.x,p.y-st.y)}
+      $('icv').getContext('2d').drawImage(IE.cv,0,0)}});
+  const up=()=>{if(!dn)return;dn=false;if(IE.mode==='crop'){$('ie-crop').textContent=IE.rect&&IE.rect.w>8&&IE.rect.h>8?'✂ Terapkan potongan':'✂ Potong'}};
+  o.addEventListener('pointerup',up);o.addEventListener('pointercancel',up)})();
+function ieClose(){$('ied').classList.add('hide');document.body.style.overflow='';IE=null}
+async function ieApply(){if(!IE)return;const b=$('ie-ok');b.disabled=true;
+  try{ieBake();let q=.88,blob;for(let i=0;i<4;i++){blob=await new Promise(r=>IE.cv.toBlob(r,'image/jpeg',q));if(!blob)throw new Error('gagal membuat gambar');if(blob.size<=MAXB)break;q-=.15}
+    if(blob.size>MAXB)throw new Error('masih melebihi 5 MB');
+    const f=new File([blob],(IE.name||'foto').replace(/\.[^.]+$/,'').replace(/-edit$/,'')+'-edit.jpg',{type:'image/jpeg'}),url=URL.createObjectURL(f);
+    if(IE.kind==='ph'){const p=PH[IE.ref];if(p){URL.revokeObjectURL(p.url);p.file=f;p.url=url}rPh()}
+    else{const x=OLD.find(o=>o.id===IE.ref);if(x){if(x._new)URL.revokeObjectURL(x._new.url);x._new={file:f,url:url};x._dirty=true}rOld()}
+    ieClose();msg('Foto diedit. Tekan Simpan agar tersimpan permanen.',true)}
+  catch(e){msg('Gagal menerapkan edit: '+(e.message||e))}finally{b.disabled=false}}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&IE)ieClose()});
+
 /* ===== CATAT ERROR ===== */
 function decodeImg(f){return new Promise((ok,no)=>{const u=URL.createObjectURL(f),im=new Image();im.onload=()=>{URL.revokeObjectURL(u);ok(im)};im.onerror=()=>{URL.revokeObjectURL(u);no(new Error('format gambar tidak bisa dibaca browser ini'))};im.src=u})}
 /* Kecilkan foto (maks 1920px, JPEG 85%) -> foto kamera HP 5-12 MB jadi ~300-800 KB; HEIC dari Safari ikut terkonversi */
@@ -197,7 +276,7 @@ async function upRetry(path,file){let last;
     if(/row-level security|jwt|expired|unauthorized|403/i.test(String(u.error.message||'')))break;
     await new Promise(r=>setTimeout(r,900*(i+1)))}
   throw last}
-function rPh(){const off=OLD.filter(x=>x.attachment_type==='image').length;$('phl').innerHTML=PH.map((p,i)=>'<div class="pf"><button class="x" title="Hapus gambar" onclick="rmPh('+i+')">×</button><b>Gambar '+(off+i+1)+'</b><img src="'+p.url+'"><label>Penjelasan / deskripsi Gambar '+(off+i+1)+'</label><textarea placeholder="Jelaskan isi gambar ini…" oninput="PH['+i+'].caption=this.value">'+esc(p.caption)+'</textarea></div>').join('')}
+function rPh(){const off=OLD.filter(x=>x.attachment_type==='image').length;$('phl').innerHTML=PH.map((p,i)=>'<div class="pf"><button class="x" title="Hapus gambar" onclick="rmPh('+i+')">×</button><b>Gambar '+(off+i+1)+'</b><img src="'+p.url+'"><label>Penjelasan / deskripsi Gambar '+(off+i+1)+'</label><textarea placeholder="Jelaskan isi gambar ini…" oninput="PH['+i+'].caption=this.value">'+esc(p.caption)+'</textarea><div class=\"bar\" style=\"margin-top:8px\"><button class=\"btn g\" onclick=\"editImg(\'ph\','+i+')\">✏️ Edit Foto</button></div></div>').join('')}
 function addLk(){LK.push({url:'',title:'',caption:''});rLk()}
 function rLk(){$('lkl').innerHTML=LK.map((l,i)=>'<div class="lr"><input placeholder="https://…" value="'+esc(l.url)+'" oninput="LK['+i+'].url=this.value"><input placeholder="Judul referensi" value="'+esc(l.title)+'" oninput="LK['+i+'].title=this.value"><input placeholder="Keterangan" value="'+esc(l.caption)+'" oninput="LK['+i+'].caption=this.value"><button class="btn r" onclick="rmLk('+i+')">×</button></div>').join('')}
 function vUrl(u){try{const x=new URL(u);return x.protocol==='http:'||x.protocol==='https:'}catch(e){return false}}
@@ -207,10 +286,18 @@ function resetForm(){FIELDS.forEach(s=>s[1].forEach(f=>{$('e-'+f[0]).value=f[0]=
 async function esearch(){const my=++SEQ2;const r=await srch($('eq').value,{},8,0);if(my!==SEQ2)return;
   if(r.error){$('elist').innerHTML='<div class="mu" style="color:var(--red)">Gagal memuat: '+esc(r.error.message)+'</div>';return}
   $('elist').innerHTML=r.data.length?'<table>'+r.data.map(e=>'<tr><td><b>'+esc(e.title)+'</b> '+(e.error_code?'<span class="tg">'+esc(e.error_code)+'</span>':'')+'<div class="mu">'+esc(e.machine_name||'—')+' · '+esc(e.category||'—')+' · '+e.status+'</div></td><td style="text-align:right;white-space:nowrap"><button class="btn g" onclick="editErr(\''+e.id+'\')">✏️ Edit</button></td></tr>').join('')+'</table>':'<div class="mu">Tidak ada data yang cocok.</div>'}
+/* Lampiran tersimpan: keterangan foto, foto (ganti), dan link (url/judul/keterangan) bisa diedit; berlaku saat Simpan Perubahan */
+function oldSet(id,k,v){const x=OLD.find(o=>o.id===id);if(x){x[k]=v;x._dirty=true}}
+async function repOld(id,inp){const f0=inp.files[0];inp.value='';if(!f0)return;const x=OLD.find(o=>o.id===id);if(!x)return;
+  try{const f=await shrink(f0);if(f.size>MAXB)throw new Error('melebihi 5 MB setelah dikompres');if(x._new)URL.revokeObjectURL(x._new.url);x._new={file:f,url:URL.createObjectURL(f)};x._dirty=true;rOld()}
+  catch(e){msg('Foto pengganti tidak bisa diproses: '+(e.message||e))}}
+function cancelRep(id){const x=OLD.find(o=>o.id===id);if(x&&x._new){URL.revokeObjectURL(x._new.url);x._new=null;rOld()}}
 function rOld(){const c=$('oldatt');if(!EID){c.classList.add('hide');return}c.classList.remove('hide');
-  c.innerHTML='<h3>Lampiran Tersimpan</h3>'+OLD.filter(x=>x.attachment_type==='image').map((x,n)=>'<div class="pf"><button class="x" title="Hapus gambar" onclick="rmOld(\''+x.id+'\')">×</button><b>Gambar '+(n+1)+'</b><img src="'+x.src+'"><div class="sn">'+esc(x.caption||'Tidak ada keterangan')+'</div></div>').join('')
-   +OLD.filter(x=>x.attachment_type==='link').map(x=>'<p style="margin-top:8px"><a href="'+esc(x.url)+'" target="_blank" rel="noopener">'+esc(x.title||x.url)+'</a> <button class="btn r" style="padding:2px 8px" onclick="rmOld(\''+x.id+'\')">×</button><br><span class="mu">'+esc(x.caption||'')+'</span></p>').join('')
-   +'<p class="mu" style="margin-top:8px">Tekan × untuk menghapus lampiran (berlaku saat disimpan). Foto/link baru bisa ditambahkan di kotak di bawah.</p>'}
+  c.innerHTML='<h3>Lampiran Tersimpan</h3>'+OLD.filter(x=>x.attachment_type==='image').map((x,n)=>'<div class="pf"><button class="x" title="Hapus gambar" onclick="rmOld(\''+x.id+'\')">×</button><b>Gambar '+(n+1)+(x._new?' <span class="tg In">foto diubah — berlaku saat disimpan</span>':'')+'</b><img src="'+(x._new?x._new.url:x.src)+'">'
+     +'<label>Penjelasan / deskripsi Gambar '+(n+1)+'</label><textarea placeholder="Jelaskan isi gambar ini…" oninput="oldSet(\''+x.id+'\',\'caption\',this.value)">'+esc(x.caption||'')+'</textarea>'
+     +'<div class="bar" style="margin-top:8px"><button class=\"btn g\" onclick=\"editImg(\'old\',\''+x.id+'\')\">✏️ Edit Foto</button><button class="btn g" onclick="$(\'rp-'+x.id+'\').click()">🔄 Ganti Foto</button>'+(x._new?'<button class="btn g" onclick="cancelRep(\''+x.id+'\')">Batal ganti</button>':'')+'<input type="file" accept="image/*" class="hide" id="rp-'+x.id+'" onchange="repOld(\''+x.id+'\',this)"></div></div>').join('')
+   +OLD.filter(x=>x.attachment_type==='link').map(x=>'<div class="lr" style="margin-top:8px"><input placeholder="https://…" value="'+esc(x.url||'')+'" oninput="oldSet(\''+x.id+'\',\'url\',this.value)"><input placeholder="Judul referensi" value="'+esc(x.title||'')+'" oninput="oldSet(\''+x.id+'\',\'title\',this.value)"><input placeholder="Keterangan" value="'+esc(x.caption||'')+'" oninput="oldSet(\''+x.id+'\',\'caption\',this.value)"><button class="btn r" onclick="rmOld(\''+x.id+'\')">×</button></div>').join('')
+   +'<p class="mu" style="margin-top:8px">Keterangan, foto (Edit Foto / Ganti Foto), dan link bisa diubah langsung; tekan × untuk menghapus. Semua berlaku saat Simpan Perubahan.</p>'}
 function rmOld(id){const i=OLD.findIndex(x=>x.id===id);if(i<0)return;const it=OLD[i];DEL.push(it);OLD.splice(i,1);rOld();rPh();
   toast('Lampiran dihapus (berlaku saat Simpan Perubahan)',()=>{DEL=DEL.filter(x=>x!==it);OLD.splice(i,0,it);rOld();rPh()})}
 function rmPh(i){const it=PH.splice(i,1)[0];rPh();toast('Gambar dihapus dari daftar',()=>{PH.splice(i,0,it);rPh()})}
@@ -275,12 +362,20 @@ async function save(){const o=formData();if(!o.title)return msg('Judul Error waj
     lks.forEach(l=>rows.push({error_id:id,attachment_type:'link',url:l.url.trim(),title:l.title||null,caption:l.caption||null}));
     if(rows.length){step='Menyimpan data lampiran';const a=await db.from('error_attachments').insert(rows);if(a.error)throw a.error}
     up=[]; /* lampiran sudah tercatat di database: file TIDAK boleh ikut dihapus lagi oleh rollback */
+    if(!isNew){for(const x of OLD.filter(o=>o._dirty)){let np=null;
+      try{step='Memperbarui lampiran';const upd={caption:x.caption||null,title:x.title||null};
+        if(x.attachment_type==='link'){if(!vUrl(String(x.url||'').trim()))throw new Error('URL tidak valid');upd.url=String(x.url).trim()}
+        if(x._new){const ext=(x._new.file.name.split('.').pop()||'jpg').replace(/[^a-z0-9]/gi,'').toLowerCase()||'jpg';np=id+'/'+Date.now()+'-r-'+Math.random().toString(36).slice(2,6)+'.'+ext;
+          b.textContent='Mengganti foto…';await upRetry(np,x._new.file);upd.file_path=np;upd.title=x._new.file.name}
+        const r=await db.from('error_attachments').update(upd).eq('id',x.id).select('id');if(r.error)throw r.error;if(!r.data||!r.data.length)throw new Error('ditolak izin (RLS)');
+        if(np&&x.file_path)db.storage.from(BUCKET).remove([x.file_path]).catch(()=>{})}
+      catch(e){if(np)db.storage.from(BUCKET).remove([np]).catch(()=>{});warn+=' Lampiran "'+(x.title||x.url||'')+'" gagal diperbarui ('+(e.message||e)+').'}}}
     if(!isNew&&DEL.length){
       try{const d=await db.from('error_attachments').delete().in('id',DEL.map(x=>x.id)).select('id');if(d.error)throw d.error;
         const gone=new Set((d.data||[]).map(x=>x.id));
         const p=DEL.filter(x=>x.file_path&&gone.has(x.id)).map(x=>x.file_path);if(p.length){const rm=await db.storage.from(BUCKET).remove(p);if(rm.error)console.warn(rm.error)}
-        if(gone.size<DEL.length)warn=' PERHATIAN: '+(DEL.length-gone.size)+' lampiran lama gagal dihapus (ditolak izin/RLS) — hapus ulang lewat Edit.'}
-      catch(x){warn=' PERHATIAN: lampiran lama gagal dihapus ('+(x.message||x)+').'}}
+        if(gone.size<DEL.length)warn+=' PERHATIAN: '+(DEL.length-gone.size)+' lampiran lama gagal dihapus (ditolak izin/RLS) — hapus ulang lewat Edit.'}
+      catch(x){warn+=' PERHATIAN: lampiran lama gagal dihapus ('+(x.message||x)+').'}}
     if(warn)msg('Tersimpan, tetapi:'+warn);else msg(isNew?'Tersimpan. ID Error: '+id.slice(0,8).toUpperCase()+' ('+id+')':'Perubahan tersimpan.',true);
     resetForm();esearch();
   }catch(e){
@@ -290,7 +385,8 @@ async function save(){const o=formData();if(!o.title)return msg('Judul Error waj
   }b.disabled=false}
 async function prevForm(){const o=formData();if(!o.title)return msg('Isi minimal Judul Error.');
   const imgs=PH.map(p=>({src:p.url,caption:p.caption,title:p.file.name}));
-  const d=await mkPdf(o,imgs,LK.filter(l=>vUrl(l.url.trim())),'(draft)');if(d)window.open(d.output('bloburl'))}
+  const w=window.open('','_blank');if(w)w.document.write('<p style="font:16px sans-serif;padding:20px">Menyiapkan PDF…</p>');
+  try{const d=await mkPdf(o,imgs,LK.filter(l=>vUrl(l.url.trim())),'(draft)');const u=d.output('bloburl');if(w)w.location.href=u;else window.open(u)}catch(x){if(w)w.close();msg('Preview gagal: '+(x.message||x))}}
 
 /* ===== ERROR MES ===== */
 let T=null,SEQ=0,SEQ2=0;function deb(f){clearTimeout(T);T=setTimeout(f,300)}
@@ -312,13 +408,13 @@ async function load(){const my=++SEQ;const raw=$('q').value.trim();
    +'</td><td>'+esc(e.machine_name||'—')+'<div class="mu">'+esc(e.production_line||'')+'</div></td><td>'+esc(e.category||'—')+'</td><td>'+(e.occurred_at?new Date(e.occurred_at).toLocaleDateString('id-ID'):'—')+'</td><td><span class="tg '+(e.status==='In Progress'?'In':e.status)+'">'+e.status+'</span></td>'
    +'<td style="white-space:nowrap"><button class="btn g" onclick="detail(\''+e.id+'\')">Detail</button> <button class="btn g" onclick="pdfOf(\''+e.id+'\',0)">Preview PDF</button> <button class="btn g" onclick="pdfOf(\''+e.id+'\',1)">⬇ PDF</button> <button class="btn r" title="Hapus" data-t="'+esc(e.title)+'" onclick="softDel(\''+e.id+'\',this.dataset.t)">🗑️</button></td></tr>').join('')+'</table>';
   const n=Math.ceil(TOT/PER);$('pg').innerHTML='<button class="btn g" '+(page?'':'disabled')+' onclick="page--;load()">‹</button><span class="mu" style="align-self:center">Halaman '+(page+1)+' / '+n+' · '+TOT+' data</span><button class="btn g" '+(page+1<n?'':'disabled')+' onclick="page++;load()">›</button>'}
-async function full(id){const e=await db.from('machine_errors').select('*').eq('id',id).single();if(e.error)throw e.error;
-  const a=await db.from('error_attachments').select('*').eq('error_id',id).order('created_at');if(a.error)throw a.error;
-  const imgs=[],lks=[];for(const x of a.data){if(x.attachment_type==='link')lks.push(x);else{
-    const s=await db.storage.from(BUCKET).createSignedUrl(x.file_path,3600);imgs.push({src:s.data?s.data.signedUrl:null,caption:x.caption,title:x.title})}}
-  return{e:e.data,imgs,lks}}
+async function full(id){const[e,a]=await Promise.all([db.from('machine_errors').select('*').eq('id',id).single(),db.from('error_attachments').select('*').eq('error_id',id).order('created_at')]);
+  if(e.error)throw e.error;if(a.error)throw a.error;
+  const ims=a.data.filter(x=>x.attachment_type!=='link'),lks=a.data.filter(x=>x.attachment_type==='link'),m={};
+  if(ims.length){const s=await db.storage.from(BUCKET).createSignedUrls(ims.map(x=>x.file_path),3600);(s.data||[]).forEach(r=>{if(r.signedUrl)m[r.path]=r.signedUrl})}
+  return{e:e.data,imgs:ims.map(x=>({src:m[x.file_path]||null,key:x.file_path,caption:x.caption,title:x.title})),lks}}
 async function detail(id){nav('det');const v=$('v-det');v.innerHTML='<div class="empty">Memuat…</div>';
-  try{const{e,imgs,lks}=await full(id);
+  try{const{e,imgs,lks}=await full(id);imgs.forEach(i=>{if(i.src)loadImg(i.src,i.key).catch(()=>{})});
   v.innerHTML='<div class="crumb">Beranda / Error MES / Detail</div><h2>'+esc(e.title)+(e.error_code?' <span class="tg">'+esc(e.error_code)+'</span>':'')+'</h2><div class="bar" style="margin:0 0 12px"><button class="btn g" onclick="nav(\'mes\')">← Kembali ke Error MES</button><button class="btn g" onclick="pdfOf(\''+id+'\',0)">Preview PDF</button><button class="btn" onclick="pdfOf(\''+id+'\',1)">Download PDF</button><button class="btn r" data-t="'+esc(e.title)+'" onclick="softDel(\''+id+'\',this.dataset.t)">🗑️ Hapus</button></div><div class="card"><dl class="dt"><dt>ID</dt><dd>'+id+'</dd>'
    +Object.keys(LBL).filter(k=>k!=='title'&&k!=='error_code').map(k=>{let v=e[k];if(k==='occurred_at'&&v)v=new Date(v).toLocaleString('id-ID');return v?'<dt>'+LBL[k]+'</dt><dd>'+esc(v)+'</dd>':''}).join('')
    +'</dl></div>'+(imgs.length?'<div class="card"><h3>Foto Error</h3>'+imgs.map((i,n)=>'<div class="pf"><b>Gambar '+(n+1)+'</b>'+(i.src?'<a href="'+i.src+'" target="_blank"><img src="'+i.src+'"></a>':'<span class="mu">Foto tidak dapat diakses</span>')+'<div class="sn">'+esc(i.caption||'Tidak ada keterangan')+'</div></div>').join('')+'</div>':'')
@@ -326,9 +422,19 @@ async function detail(id){nav('det');const v=$('v-det');v.innerHTML='<div class=
   }catch(x){v.innerHTML='<div class="empty" style="color:var(--red)">Gagal memuat: '+esc(x.message)+'</div>'}}
 
 /* ===== PDF ===== */
-function loadImg(src){return new Promise((ok,no)=>{fetch(src).then(r=>{if(!r.ok)throw 0;return r.blob()}).then(b=>{const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>ok({d:fr.result,w:im.width,h:im.height,t:b.type.includes('png')?'PNG':b.type.includes('webp')?'WEBP':'JPEG'});im.onerror=no;im.src=fr.result};fr.readAsDataURL(b)}).catch(no)})}
+/* Foto diperkecil (maks 1400px, JPEG 80%) sebelum masuk PDF -> PDF kecil & cepat dibuat */
+const IMGC=new Map(),PDFC=new Map();
+function loadImg(src,key){key=key||src;if(IMGC.has(key))return IMGC.get(key);
+  const pr=(async()=>{const r=await fetch(src);if(!r.ok)throw 0;const b=await r.blob();let bm;
+    try{bm=await createImageBitmap(b)}catch(_){bm=await decodeImg(b)}
+    const W=bm.width||bm.naturalWidth,H=bm.height||bm.naturalHeight;
+    if(b.type==='image/jpeg'&&Math.max(W,H)<=1400&&b.size<450*1024){const d=await new Promise((ok,no)=>{const f=new FileReader();f.onload=()=>ok(f.result);f.onerror=no;f.readAsDataURL(b)});if(bm.close)bm.close();return{d:d,w:W,h:H,t:'JPEG'}}
+    const k=Math.min(1,1280/Math.max(W,H)),w=Math.max(1,Math.round(W*k)),h=Math.max(1,Math.round(H*k)),c=document.createElement('canvas');c.width=w;c.height=h;
+    const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,w,h);g.drawImage(bm,0,0,w,h);if(bm.close)bm.close();
+    return{d:c.toDataURL('image/jpeg',0.78),w:w,h:h,t:'JPEG'}})();
+  IMGC.set(key,pr);pr.catch(()=>IMGC.delete(key));if(IMGC.size>40)IMGC.delete(IMGC.keys().next().value);return pr}
 /* Font bawaan jsPDF (helvetica) hanya mendukung Latin-1. Teks lain (Mandarin/Jepang/simbol/emoji) digambar via canvas -> gambar, supaya tampil benar. */
-const PXMM=12,PT=0.3528,CVF='"Noto Sans SC","Noto Sans CJK SC","Microsoft YaHei","PingFang SC","Hiragino Sans GB","Segoe UI",Roboto,Arial,sans-serif';
+const PXMM=8,PT=0.3528,CVF='"Noto Sans SC","Noto Sans CJK SC","Microsoft YaHei","PingFang SC","Hiragino Sans GB","Segoe UI",Roboto,Arial,sans-serif';
 const needCv=s=>/[^\x00-\xFF\u2013\u2014\u2018\u2019\u201A\u201C\u201D\u201E\u2020\u2021\u2022\u2026\u2030\u2039\u203A\u20AC\u2122\u0152\u0153\u0160\u0161\u0178\u017D\u017E\u0192\u02C6\u02DC]/.test(s);
 const cvFont=(size,st)=>(st.includes('italic')?'italic ':'')+(st.includes('bold')?'700':'400')+' '+(size*PT*PXMM)+'px '+CVF;
 let _cx;const cx=()=>_cx||(_cx=document.createElement('canvas').getContext('2d'));
@@ -345,9 +451,10 @@ function cvLine(line,size,st,col){const font=cvFont(size,st),fs=size*PT*PXMM,c=d
   g.font=font;g.fillStyle='rgb('+col.join(',')+')';g.textBaseline='alphabetic';g.fillText(line,0,fs*1.1);
   return{d:c.toDataURL('image/png'),w:w/PXMM,h:H/PXMM,base:fs*1.1/PXMM}}
 async function loadCjk(txt){const x=txt.replace(/[\x00-\xFF]/g,'');if(!x||!document.fonts)return;
-  try{await Promise.race([Promise.all([document.fonts.load('400 16px "Noto Sans SC"',x),document.fonts.load('700 16px "Noto Sans SC"',x)]),new Promise(r=>setTimeout(r,4000))])}catch(_){}}
-async function mkPdf(e,imgs,lks,idTxt){const{jsPDF}=window.jspdf;const d=new jsPDF({unit:'mm',format:'a4'}),W=210,M=15,CW=W-2*M;let y=0,fail=[];
-  await loadCjk([e.title,e.error_code,e.machine_name,e.production_line,e.category,e.status,e.description,e.symptoms,e.alarm_message,e.cause_analysis,e.possible_causes,e.troubleshooting_steps,e.inspection_results,e.solution,e.verification_results,e.additional_notes,...imgs.map(i=>i.caption),...lks.map(l=>(l.title||'')+(l.caption||''))].filter(Boolean).join(''));
+  try{await Promise.race([Promise.all([document.fonts.load('400 16px "Noto Sans SC"',x),document.fonts.load('700 16px "Noto Sans SC"',x)]),new Promise(r=>setTimeout(r,2500))])}catch(_){}}
+async function mkPdf(e,imgs,lks,idTxt){const{jsPDF}=window.jspdf;const d=new jsPDF({unit:'mm',format:'a4',compress:true}),W=210,M=15,CW=W-2*M;let y=0,fail=[];
+  const FP=loadCjk([e.title,e.error_code,e.machine_name,e.production_line,e.category,e.status,e.description,e.symptoms,e.alarm_message,e.cause_analysis,e.possible_causes,e.troubleshooting_steps,e.inspection_results,e.solution,e.verification_results,e.additional_notes,...imgs.map(i=>i.caption),...lks.map(l=>(l.title||'')+(l.caption||''))].filter(Boolean).join(''));
+  const LD=await Promise.all(imgs.map(im=>im.src?loadImg(im.src,im.key).catch(()=>null):null));await FP; /* foto & font diunduh paralel */
   const brk=h=>{if(y+h>285){d.addPage();y=20}};
   /* tulis paragraf (auto-wrap, auto page-break); otomatis pilih jalur native / canvas */
   const para=(txt,o={})=>{const size=o.size||10,st=o.st||'normal',col=o.col||[20,20,20],lh=o.lh||4.7,x=o.x==null?M:o.x,mw=o.w||(CW-(x-M));
@@ -365,7 +472,7 @@ async function mkPdf(e,imgs,lks,idTxt){const{jsPDF}=window.jspdf;const d=new jsP
   sec('Deskripsi Error',e.description);sec('Gejala yang Ditemukan',e.symptoms);if(e.alarm_message)sec('Alarm / Pesan',e.alarm_message);
   head('Foto Error',6);
   if(!imgs.length)para('-');
-  let gi=0;for(const im of imgs){gi++;try{if(!im.src)throw 0;const L=await loadImg(im.src);let w=CW,h=w*L.h/L.w;if(h>95){h=95;w=h*L.w/L.h}brk(h+24);d.setFont('helvetica','bold');d.setFontSize(10);d.setTextColor(20);d.text('Gambar '+gi,M,y);y+=4.5;d.addImage(L.d,L.t,M,y,w,h);y+=h+4;
+  let gi=0;for(const im of imgs){gi++;try{const L=LD[gi-1];if(!L)throw 0;let w=CW,h=w*L.h/L.w;if(h>95){h=95;w=h*L.w/L.h}brk(h+24);d.setFont('helvetica','bold');d.setFontSize(10);d.setTextColor(20);d.text('Gambar '+gi,M,y);y+=4.5;d.addImage(L.d,L.t,M,y,w,h,undefined,'FAST');y+=h+4;
     para(im.caption||'Tidak ada keterangan',{size:9,st:'italic',lh:4.3});y+=4}catch(x){fail.push(im.title||'foto')}}
   head('Link Referensi',5.5);
   if(!lks.length)para('-');
@@ -377,9 +484,12 @@ async function mkPdf(e,imgs,lks,idTxt){const{jsPDF}=window.jspdf;const d=new jsP
   const n=d.getNumberOfPages();for(let i=1;i<=n;i++){d.setPage(i);d.setFontSize(8);d.setFont('helvetica','normal');d.setTextColor(120);d.text('Halaman '+i+' / '+n,W-M,292,{align:'right'})}
   if(fail.length)alert('Peringatan: foto berikut tidak dapat dimuat dan TIDAK masuk PDF:\n- '+fail.join('\n- '));
   return d}
-async function pdfOf(id,dl){try{msg('Menyiapkan PDF…',true);const{e,imgs,lks}=await full(id);const d=await mkPdf(e,imgs,lks,id.slice(0,8).toUpperCase());
-  if(dl)d.save((e.error_code?e.error_code+' - ':'')+e.title.replace(/[\\/:*?"<>|]/g,'')+'.pdf');else window.open(d.output('bloburl'))}catch(x){msg('PDF gagal: '+(x.message||x))}}
+async function pdfOf(id,dl){let w=null;if(!dl){w=window.open('','_blank');if(w)w.document.write('<p style="font:16px sans-serif;padding:20px">Menyiapkan PDF…</p>')}
+  try{msg('Menyiapkan PDF…',true);const{e,imgs,lks}=await full(id);const ck=JSON.stringify([e,imgs.map(i=>[i.key,i.caption]),lks.map(l=>[l.url,l.title,l.caption])]);let d=PDFC.get(id);if(!d||d.k!==ck){d=await mkPdf(e,imgs,lks,id.slice(0,8).toUpperCase());d.k=ck;PDFC.set(id,d);if(PDFC.size>6)PDFC.delete(PDFC.keys().next().value)}
+  if(dl)d.save((e.error_code?e.error_code+' - ':'')+e.title.replace(/[\\/:*?"<>|]/g,'')+'.pdf');else{const u=d.output('bloburl');if(w)w.location.href=u;else window.open(u)}
+  $('msg').className='hide'}catch(x){if(w)w.close();msg('PDF gagal: '+(x.message||x))}}
 init();
+if(document.fonts)setTimeout(()=>{try{document.fonts.load('400 16px "Noto Sans SC"','中');document.fonts.load('700 16px "Noto Sans SC"','中')}catch(_){}},1500); /* pemanasan font Mandarin agar PDF tidak menunggu */
 </script>
 </body>
 </html>
