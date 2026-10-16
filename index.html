@@ -34,7 +34,7 @@ td{padding:9px 8px;border-bottom:1px solid var(--bd);vertical-align:top}
 .mu{color:var(--mu);font-size:12px}.hide{display:none!important}.sn{font-size:12px;color:#334;margin-top:3px}
 .th{display:flex;gap:10px;flex-wrap:wrap}.th>div{width:170px;border:1px solid var(--bd);border-radius:8px;padding:6px;position:relative}
 .th img{width:100%;height:110px;object-fit:cover;border-radius:5px}.th .x{position:absolute;top:2px;right:2px;background:var(--red);color:#fff;border:0;border-radius:50%;width:22px;height:22px;cursor:pointer}
-.pf{position:relative;border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:12px;max-width:600px;background:#fff}.pf b{display:block;margin-bottom:6px;color:var(--nav)}.pf img{width:100%;max-height:380px;object-fit:contain;background:var(--bg);border-radius:6px;display:block}.pf label{margin-top:8px}.pf .x{position:absolute;top:8px;right:8px;background:var(--red);color:#fff;border:0;border-radius:50%;width:26px;height:26px;cursor:pointer;z-index:2}
+.pf{position:relative;border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:12px;max-width:600px;background:#fff}.pf b{display:block;margin-bottom:8px;color:var(--nav);font-size:18px}.pf b .mu{font-size:14px}.pf label{font-size:15px}.pf textarea{font-size:17px;line-height:1.5;min-height:90px}.pf .sn{font-size:16px;line-height:1.5}.pf .btn{font-size:15px}.pf img{width:100%;max-height:380px;object-fit:contain;background:var(--bg);border-radius:6px;display:block}.pf label{margin-top:8px}.pf .x{position:absolute;top:8px;right:8px;background:var(--red);color:#fff;border:0;border-radius:50%;width:26px;height:26px;cursor:pointer;z-index:2}
 #toasts{position:fixed;left:18px;bottom:18px;display:flex;flex-direction:column;gap:8px;z-index:98}.tt{position:relative;overflow:hidden;background:#1b2433;color:#fff;border-radius:9px;padding:12px 14px 15px;display:flex;gap:14px;align-items:center;box-shadow:0 6px 18px rgba(0,0,0,.3);max-width:440px}.tt button{background:none;border:0;color:#60a5fa;font-weight:800;cursor:pointer;font-size:13px;white-space:nowrap}.tt i{position:absolute;left:0;bottom:0;height:3px;background:#60a5fa;animation:tt 10s linear forwards}@keyframes tt{from{width:100%}to{width:0}}.tt .cl{color:#fff;opacity:.75;font-size:16px;padding:0 2px;margin-left:-4px}.tt .cl:hover{opacity:1}#ca{align-self:flex-start;box-shadow:0 4px 12px rgba(0,0,0,.25)}
 #login,#gate{position:fixed;inset:0;background:var(--nav);display:flex;align-items:center;justify-content:center;z-index:50}#gate{z-index:55}#login .card,#gate .card{width:380px;max-width:92vw;text-align:center}#login p,#gate p{margin:8px 0 16px}#gate .bar{justify-content:center}.badge{background:#fff;color:var(--nav);border-radius:99px;padding:1px 7px;font-size:11px;margin-left:4px}.gbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:11px;border:1px solid var(--bd);border-radius:8px;background:#fff;font-weight:700;font-size:14px;cursor:pointer;color:#3c4043}.gbtn:hover{background:#f6f8fb}#usr{position:absolute;bottom:14px;left:12px;right:12px;font-size:12px}#usr span{display:block;opacity:.75;word-break:break-all;margin-bottom:6px}#usr b{cursor:pointer;text-decoration:underline}
 .lr{display:grid;grid-template-columns:2fr 1.5fr 2fr auto;gap:8px;margin-bottom:8px}
@@ -70,6 +70,7 @@ td:last-child{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;white-space:nor
 #iwrap canvas{display:block;max-width:calc(100vw - 24px);max-height:calc(100vh - 150px);touch-action:none}
 #iov{position:absolute;left:0;top:0;width:100%;height:100%;cursor:crosshair}
 #ihint{color:#cbd5e1;text-align:center;font-size:12px;padding:6px 10px 10px}
+body.ru .nv[data-v="cat"],body.ru .nv[data-v="trash"],body.ru .nv[data-v="acc"]{display:none!important}body.ru button[onclick^="softDel"],body.ru button[onclick*="nav('cat')"]{display:none!important}.rl{display:block;font-size:11px;opacity:.75;margin-top:2px}
 </style>
 </head>
 <body>
@@ -157,10 +158,10 @@ function init(){
   db.auth.getSession().then(r=>{if(r.data.session)enter(r.data.session);else $('login').classList.remove('hide')});
   db.auth.onAuthStateChange((ev,ses)=>{if(ev==='SIGNED_OUT')location.reload();else if(ev==='SIGNED_IN'&&$('login').classList.contains('hide')===false)enter(ses)});
 }
-let GT=null;
+let GT=null,ROLE='user',IS_ADM=false,IS_OWN=false;
 function gate(st,info){const c=$('gate-c');$('gate').classList.remove('hide');
   const out='<button class="btn g" onclick="logout()">Keluar</button>';
-  if(st==='pending'){c.innerHTML='<h2>⏳ Menunggu Persetujuan</h2><p>Akun <b>'+esc(info)+'</b> sudah terdaftar. Master perlu menyetujui dulu sebelum Anda bisa memakai Error MES. Halaman ini memeriksa ulang otomatis.</p><div class="bar"><button class="btn" onclick="recheck()">Cek sekarang</button>'+out+'</div>';if(!GT)GT=setInterval(recheck,10000)}
+  if(st==='pending'){c.innerHTML='<h2>⏳ Menunggu Persetujuan</h2><p>Akun <b>'+esc(info)+'</b> sudah terdaftar. Master perlu menyetujui dulu dan menentukan peran Anda (Admin Master atau User) sebelum Anda bisa masuk. Halaman ini memeriksa ulang otomatis.</p><div class="bar"><button class="btn" onclick="recheck()">Cek sekarang</button>'+out+'</div>';if(!GT)GT=setInterval(recheck,10000)}
   else if(st==='rejected'){clearInterval(GT);GT=null;c.innerHTML='<h2>⛔ Akses Ditolak</h2><p>Akun <b>'+esc(info)+'</b> tidak diizinkan oleh master.</p><div class="bar">'+out+'</div>'}
   else{clearInterval(GT);GT=null;c.innerHTML='<h2>⚠️ Gagal</h2><p>'+esc(info)+'</p><div class="bar">'+out+'</div>'}}
 function recheck(){db.auth.getSession().then(r=>{if(r.data.session)enter(r.data.session)})}
@@ -169,29 +170,39 @@ async function enter(ses){$('login').classList.add('hide');const em=(ses&&ses.us
   if(r.error||!r.data||!r.data.length){gate('err','Gagal memeriksa izin akun: '+(r.error?r.error.message:'data kosong')+'. Pastikan master.sql sudah dijalankan.');return}
   const u=r.data[0];if(u.status!=='approved'){gate(u.status,em);return}
   clearInterval(GT);GT=null;$('gate').classList.add('hide');
-  if(u.role==='master'){$('nv-acc').classList.remove('hide');pend()}
-  nav('cat');purgeExpired()}
+  ROLE=u.role==='master'?'master':(u.role==='admin'?'admin':'user');IS_OWN=ROLE==='master';IS_ADM=ROLE!=='user';
+  document.body.classList.toggle('ru',!IS_ADM);
+  const RL={master:'Master Utama',admin:'Admin Master',user:'User'}[ROLE];$('usr-e').innerHTML=esc(em)+'<span class="rl">'+RL+'</span>';
+  if(IS_ADM){$('nv-acc').classList.remove('hide');pend();nav('cat');purgeExpired()}else nav('mes')}
 async function pend(){const r=await db.from('app_users').select('email',{count:'exact',head:true}).eq('status','pending');const b=$('pbadge');b.textContent=r.count||'';b.classList.toggle('hide',!r.count)}
 async function loadAcc(){const v=$('v-acc');
-  const head='<div class="crumb">Beranda / Akun</div><h2>Akun & Perizinan</h2><p class="mu" style="margin-bottom:12px">Akun Google yang login harus Anda setujui dulu sebelum bisa memakai Error MES.</p>';
+  const head='<div class="crumb">Beranda / Akun</div><h2>Akun & Perizinan</h2><p class="mu" style="margin-bottom:12px">Akun Google yang login harus disetujui dulu. <b>Centang Admin Master</b> = semua menu bisa dilihat. <b>Tidak dicentang (User)</b> = hanya menu Error MES dan Keluar.'+(IS_OWN?'':' Hanya Master Utama yang bisa mengubah centang Admin Master.')+'</p>';
   const r=await db.from('app_users').select('*').order('requested_at',{ascending:false});
   if(r.error){v.innerHTML=head+'<div class="card empty" style="color:var(--red)">Gagal memuat: '+esc(r.error.message)+'</div>';return}
   const B=(c,l,e,a)=>'<button class="btn '+c+'" data-e="'+esc(e)+'" onclick="'+a+'">'+l+'</button> ';
-  const row=u=>{let b='',t='';
-    if(u.role==='master'){t='<span class="tg Resolved">Master</span>'}
-    else if(u.status==='pending'){t='<span class="tg In">Menunggu</span>';b=B('','✅ Terima',u.email,"accSet(this.dataset.e,'approved','pending')")+B('r','Tolak',u.email,"accSet(this.dataset.e,'rejected','pending')")}
-    else if(u.status==='approved'){t='<span class="tg Resolved">Diterima</span>';b=B('r','Cabut Akses',u.email,"accSet(this.dataset.e,'rejected','approved')")}
-    else{t='<span class="tg Open">Ditolak</span>';b=B('','✅ Terima',u.email,"accSet(this.dataset.e,'approved','rejected')")+B('r','🗑️ Hapus dari daftar',u.email,"accDel(this.dataset.e)")}
-    return '<tr><td><b>'+esc(u.email)+'</b><div class="mu">'+esc(u.name||'')+'</div></td><td>'+t+'</td><td>'+new Date(u.requested_at).toLocaleDateString('id-ID')+'</td><td style="white-space:nowrap">'+b+'</td></tr>'};
+  const row=u=>{let b='',t='',c='<span class="mu">—</span>';const isM=u.role==='master',isA=u.role==='admin',lock=isA&&!IS_OWN;
+    if(isM){t='<span class="tg Resolved">👑 Master Utama</span>';c='<span class="mu">🔒 Tidak bisa diubah</span>'}
+    else if(u.status==='pending'){t='<span class="tg In">Menunggu</span>';b=B('','✅ Terima sebagai User',u.email,"accOk(this.dataset.e,0)")+(IS_OWN?B('','⭐ Terima sebagai Admin Master',u.email,"accOk(this.dataset.e,1)"):'')+B('r','Tolak',u.email,"accSet(this.dataset.e,'rejected','pending')");c='<span class="mu">Pilih peran saat menerima</span>'}
+    else if(u.status==='approved'){t=isA?'<span class="tg Resolved">Admin Master</span>':'<span class="tg">User</span>';
+      c='<label style="display:flex;align-items:center;gap:6px;margin:0;color:var(--tx);font-size:13px"><input type="checkbox" style="width:auto" data-e="'+esc(u.email)+'"'+(isA?' checked':'')+(IS_OWN?'':' disabled')+' onchange="setAdm(this)"> Admin Master</label>';
+      if(!lock)b=B('r','Cabut Akses',u.email,"accSet(this.dataset.e,'rejected','approved')")}
+    else{t='<span class="tg Open">Ditolak</span>';b=B('','✅ Terima',u.email,"accSet(this.dataset.e,'approved','rejected')")+(lock?'':B('r','🗑️ Hapus dari daftar',u.email,"accDel(this.dataset.e)"))}
+    return '<tr><td><b>'+esc(u.email)+'</b><div class="mu">'+esc(u.name||'')+'</div></td><td>'+t+'</td><td>'+c+'</td><td>'+new Date(u.requested_at).toLocaleDateString('id-ID')+'</td><td style="white-space:nowrap">'+b+'</td></tr>'};
   const ord={pending:0,approved:1,rejected:2};const d=r.data.slice().sort((a,b)=>(a.role==='master'?-1:0)-(b.role==='master'?-1:0)||ord[a.status]-ord[b.status]);
-  v.innerHTML=head+'<div class="card"><table><tr><th>Akun Google</th><th>Status</th><th>Daftar</th><th></th></tr>'+d.map(row).join('')+'</table></div>'}
-async function accSet(email,st,prev){const r=await db.from('app_users').update({status:st,decided_at:new Date().toISOString()}).eq('email',email);if(r.error)return msg('Gagal: '+r.error.message);loadAcc();pend();
-  toast(email+(st==='approved'?' diterima':' ditolak / akses dicabut'),async()=>{await db.from('app_users').update({status:prev}).eq('email',email);loadAcc();pend()})}
-async function accDel(email){const g=await db.from('app_users').select('*').eq('email',email).single();const r=await db.from('app_users').delete().eq('email',email);if(r.error)return msg('Gagal: '+r.error.message);loadAcc();pend();
-  toast(email+' dihapus dari daftar',async()=>{await db.from('app_users').insert(g.data);loadAcc();pend()})}
+  v.innerHTML=head+'<div class="card"><table><tr><th>Akun Google</th><th>Status</th><th>Hak Akses</th><th>Daftar</th><th></th></tr>'+d.map(row).join('')+'</table></div>'}
+async function accSet(email,st,prev){const r=await db.rpc('set_status',{p_email:email,p_status:st});if(r.error)return msg('Gagal: '+r.error.message);loadAcc();pend();
+  toast(email+(st==='approved'?' diterima':' ditolak / akses dicabut'),async()=>{await db.rpc('set_status',{p_email:email,p_status:prev});loadAcc();pend()})}
+async function accOk(email,adm){const r=await db.rpc('set_status',{p_email:email,p_status:'approved'});if(r.error)return msg('Gagal: '+r.error.message);
+  if(adm){const r2=await db.rpc('set_admin',{p_email:email,p_on:true});if(r2.error){msg('Diterima sebagai User, tapi gagal jadi Admin Master: '+r2.error.message)}}
+  loadAcc();pend();toast(email+(adm?' diterima sebagai Admin Master':' diterima sebagai User'),async()=>{if(adm)await db.rpc('set_admin',{p_email:email,p_on:false});await db.rpc('set_status',{p_email:email,p_status:'pending'});loadAcc();pend()})}
+async function accDel(email){const g=await db.from('app_users').select('*').eq('email',email).single();const r=await db.rpc('del_user',{p_email:email});if(r.error)return msg('Gagal: '+r.error.message);loadAcc();pend();
+  toast(email+' dihapus dari daftar',async()=>{if(g.data)await db.rpc('readd_user',{p:g.data});loadAcc();pend()})}
+async function setAdm(cb){const e=cb.dataset.e,on=cb.checked;cb.disabled=true;const r=await db.rpc('set_admin',{p_email:e,p_on:on});
+  if(r.error){cb.checked=!on;cb.disabled=false;return msg('Gagal: '+r.error.message)}
+  loadAcc();toast(e+(on?' dijadikan Admin Master':' diubah menjadi User (hanya Error MES & Keluar)'),async()=>{await db.rpc('set_admin',{p_email:e,p_on:!on});loadAcc()})}
 function googleLogin(){db.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}}).then(r=>{if(r.error)msg('Login Google gagal: '+r.error.message)})}
 function logout(){db.auth.signOut().then(()=>location.reload())}
-function nav(v){['cat','mes','det','trash','acc'].forEach(x=>$('v-'+x).classList.toggle('hide',x!==v));
+function nav(v){if(!IS_ADM&&['cat','trash','acc'].includes(v))v='mes';['cat','mes','det','trash','acc'].forEach(x=>$('v-'+x).classList.toggle('hide',x!==v));
   document.querySelectorAll('.nv').forEach(n=>n.classList.toggle('on',n.dataset.v===(v==='det'?'mes':v)));if(v==='mes')load();if(v==='cat')esearch();if(v==='trash')loadTrash();if(v==='acc')loadAcc()}
 
 
@@ -281,11 +292,11 @@ async function upRetry(path,file){let last;
 async function addPhTo(i,inp){const files=Array.from(inp.files);inp.value='';const g=PH[i];if(!g)return;
   for(const f0 of files){try{if(f0.type&&!/^image\//.test(f0.type))throw new Error('bukan file gambar');const f=await shrink(f0);if(f.size>MAXB)throw new Error('melebihi 5 MB setelah dikompres');g.files.push({file:f,url:URL.createObjectURL(f)});rPh()}catch(e){msg('Foto "'+f0.name+'" tidak bisa diproses: '+(e.message||e))}}rPh()}
 function rmPhF(i,j){const g=PH[i];if(!g)return;const it=g.files.splice(j,1)[0];
-  if(!g.files.length){PH.splice(i,1);rPh();toast('Gambar dihapus dari daftar',()=>{g.files.splice(j,0,it);PH.splice(i,0,g);rPh()});return}
-  rPh();toast('Foto dihapus dari gambar',()=>{g.files.splice(j,0,it);rPh()})}
-function rPh(){const off=oldGroups().length;$('phl').innerHTML=PH.map((g,i)=>'<div class="pf"><button class="x" title="Hapus seluruh gambar ini" onclick="rmPh('+i+')">×</button><b>Gambar '+(off+i+1)+' <span class="mu">('+g.files.length+' foto)</span></b><div class="th">'
+  if(!g.files.length){PH.splice(i,1);rPh();toast('Step dihapus dari daftar',()=>{g.files.splice(j,0,it);PH.splice(i,0,g);rPh()});return}
+  rPh();toast('Foto dihapus dari step',()=>{g.files.splice(j,0,it);rPh()})}
+function rPh(){const off=oldGroups().length;$('phl').innerHTML=PH.map((g,i)=>'<div class="pf"><button class="x" title="Hapus seluruh step ini" onclick="rmPh('+i+')">×</button><b>Step '+(off+i+1)+' <span class="mu">('+g.files.length+' foto)</span></b><div class="th">'
   +g.files.map((p,j)=>'<div><button class="x" title="Hapus foto ini" onclick="rmPhF('+i+','+j+')">×</button><img src="'+p.url+'"><div class="bar" style="margin-top:4px"><button class="btn g" onclick="editImg(\'ph\',\''+i+'.'+j+'\')">✏️ Edit</button></div></div>').join('')
-  +'</div><label>Penjelasan / deskripsi Gambar '+(off+i+1)+'</label><textarea placeholder="Jelaskan isi gambar ini…" oninput="PH['+i+'].caption=this.value">'+esc(g.caption)+'</textarea><div class="bar" style="margin-top:8px"><button class="btn g" onclick="$(\'pa-'+i+'\').click()">➕ Tambah Foto</button><input type="file" accept="image/*" multiple class="hide" id="pa-'+i+'" onchange="addPhTo('+i+',this)"></div></div>').join('')}
+  +'</div><label>Penjelasan / deskripsi Step '+(off+i+1)+'</label><textarea placeholder="Jelaskan isi step ini…" oninput="PH['+i+'].caption=this.value">'+esc(g.caption)+'</textarea><div class="bar" style="margin-top:8px"><button class="btn g" onclick="$(\'pa-'+i+'\').click()">➕ Tambah Foto</button><input type="file" accept="image/*" multiple class="hide" id="pa-'+i+'" onchange="addPhTo('+i+',this)"></div></div>').join('')}
 function addLk(){LK.push({url:'',title:'',caption:''});rLk()}
 function rLk(){$('lkl').innerHTML=LK.map((l,i)=>'<div class="lr"><input placeholder="https://…" value="'+esc(l.url)+'" oninput="LK['+i+'].url=this.value"><input placeholder="Judul referensi" value="'+esc(l.title)+'" oninput="LK['+i+'].title=this.value"><input placeholder="Keterangan" value="'+esc(l.caption)+'" oninput="LK['+i+'].caption=this.value"><button class="btn r" onclick="rmLk('+i+')">×</button></div>').join('')}
 function vUrl(u){try{const x=new URL(u);return x.protocol==='http:'||x.protocol==='https:'}catch(e){return false}}
@@ -310,18 +321,18 @@ async function addGrp(k,inp){const files=Array.from(inp.files);inp.value='';
 function rmAdd(i){const it=ADD.splice(i,1)[0];rOld();toast('Foto dihapus dari daftar',()=>{ADD.splice(i,0,it);rOld()})}
 function rmGrp(k){const g=oldGroups().find(x=>x.k===k);if(!g)return;const pos=g.items.map(x=>[x,OLD.indexOf(x)]),ad=ADD.filter(a=>a.gk===k);ADD=ADD.filter(a=>a.gk!==k);
   g.items.forEach(x=>{DEL.push(x);OLD.splice(OLD.indexOf(x),1)});rOld();rPh();
-  toast('Gambar dihapus (berlaku saat Simpan Perubahan)',()=>{DEL=DEL.filter(x=>!g.items.includes(x));pos.forEach(p=>OLD.splice(p[1],0,p[0]));ADD=ADD.concat(ad);rOld();rPh()})}
+  toast('Step dihapus (berlaku saat Simpan Perubahan)',()=>{DEL=DEL.filter(x=>!g.items.includes(x));pos.forEach(p=>OLD.splice(p[1],0,p[0]));ADD=ADD.concat(ad);rOld();rPh()})}
 function grpHtml(g,n){const k=g.k,ad=ADD.map((a,i)=>({a:a,i:i})).filter(o=>o.a.gk===k);
   const ph=g.items.map(x=>'<div><button class="x" title="Hapus foto ini" onclick="rmOld(\''+x.id+'\')">×</button><img src="'+(x._new?x._new.url:x.src)+'"><div class="bar" style="margin-top:4px"><button class="btn g" onclick="editImg(\'old\',\''+x.id+'\')">✏️</button><button class="btn g" onclick="$(\'rp-'+x.id+'\').click()">🔄</button>'+(x._new?'<button class="btn g" onclick="cancelRep(\''+x.id+'\')">Batal</button>':'')+'<input type="file" accept="image/*" class="hide" id="rp-'+x.id+'" onchange="repOld(\''+x.id+'\',this)"></div></div>').join('')
    +ad.map(o=>'<div><span class="tg In" style="position:absolute;left:4px;top:4px;z-index:2">baru</span><button class="x" title="Hapus foto ini" onclick="rmAdd('+o.i+')">×</button><img src="'+o.a.url+'"><div class="bar" style="margin-top:4px"><button class="btn g" onclick="editImg(\'add\','+o.i+')">✏️ Edit</button></div></div>').join('');
-  return '<div class="pf"><b>Gambar '+(n+1)+' <span class="mu">('+(g.items.length+ad.length)+' foto)</span></b><div class="th">'+ph+'</div><label>Penjelasan / deskripsi Gambar '+(n+1)+'</label><textarea placeholder="Jelaskan isi gambar ini…" oninput="grpCap(\''+k+'\',this.value)">'+esc(g.items[0].caption||'')+'</textarea><div class="bar" style="margin-top:8px"><button class="btn g" onclick="$(\'ga-'+k+'\').click()">➕ Tambah Foto</button><button class="btn r" onclick="rmGrp(\''+k+'\')">Hapus Gambar Ini</button><input type="file" accept="image/*" multiple class="hide" id="ga-'+k+'" onchange="addGrp(\''+k+'\',this)"></div></div>'}
+  return '<div class="pf"><b>Step '+(n+1)+' <span class="mu">('+(g.items.length+ad.length)+' foto)</span></b><div class="th">'+ph+'</div><label>Penjelasan / deskripsi Step '+(n+1)+'</label><textarea placeholder="Jelaskan isi step ini…" oninput="grpCap(\''+k+'\',this.value)">'+esc(g.items[0].caption||'')+'</textarea><div class="bar" style="margin-top:8px"><button class="btn g" onclick="$(\'ga-'+k+'\').click()">➕ Tambah Foto</button><button class="btn r" onclick="rmGrp(\''+k+'\')">Hapus Step Ini</button><input type="file" accept="image/*" multiple class="hide" id="ga-'+k+'" onchange="addGrp(\''+k+'\',this)"></div></div>'}
 function rOld(){const c=$('oldatt');if(!EID){c.classList.add('hide');return}c.classList.remove('hide');
   c.innerHTML='<h3>Lampiran Tersimpan</h3>'+oldGroups().map((g,n)=>grpHtml(g,n)).join('')
    +OLD.filter(x=>x.attachment_type==='link').map(x=>'<div class="lr" style="margin-top:8px"><input placeholder="https://…" value="'+esc(x.url||'')+'" oninput="oldSet(\''+x.id+'\',\'url\',this.value)"><input placeholder="Judul referensi" value="'+esc(x.title||'')+'" oninput="oldSet(\''+x.id+'\',\'title\',this.value)"><input placeholder="Keterangan" value="'+esc(x.caption||'')+'" oninput="oldSet(\''+x.id+'\',\'caption\',this.value)"><button class="btn r" onclick="rmOld(\''+x.id+'\')">×</button></div>').join('')
    +'<p class="mu" style="margin-top:8px">Keterangan, foto (Edit Foto / Ganti Foto), dan link bisa diubah langsung; tekan × untuk menghapus. Semua berlaku saat Simpan Perubahan.</p>'}
 function rmOld(id){const i=OLD.findIndex(x=>x.id===id);if(i<0)return;const it=OLD[i];DEL.push(it);OLD.splice(i,1);rOld();rPh();
   toast('Lampiran dihapus (berlaku saat Simpan Perubahan)',()=>{DEL=DEL.filter(x=>x!==it);OLD.splice(i,0,it);rOld();rPh()})}
-function rmPh(i){const it=PH.splice(i,1)[0];rPh();toast('Gambar dihapus dari daftar',()=>{PH.splice(i,0,it);rPh()})}
+function rmPh(i){const it=PH.splice(i,1)[0];rPh();toast('Step dihapus dari daftar',()=>{PH.splice(i,0,it);rPh()})}
 function rmLk(i){const it=LK.splice(i,1)[0];rLk();toast('Link dihapus dari daftar',()=>{LK.splice(i,0,it);rLk()})}
 async function editErr(id){try{
   const e=await db.from('machine_errors').select('*').eq('id',id).single();if(e.error)throw e.error;
@@ -440,7 +451,7 @@ async function detail(id){nav('det');const v=$('v-det');v.innerHTML='<div class=
   try{const{e,imgs,lks}=await full(id);imgs.forEach(i=>{if(i.src)loadImg(i.src,i.key).catch(()=>{})});
   v.innerHTML='<div class="crumb">Beranda / Error MES / Detail</div><h2>'+esc(e.title)+(e.error_code?' <span class="tg">'+esc(e.error_code)+'</span>':'')+'</h2><div class="bar" style="margin:0 0 12px"><button class="btn g" onclick="nav(\'mes\')">← Kembali ke Error MES</button><button class="btn g" onclick="pdfOf(\''+id+'\',0)">Preview PDF</button><button class="btn" onclick="pdfOf(\''+id+'\',1)">Download PDF</button>'+fsHtml()+'<button class="btn r" data-t="'+esc(e.title)+'" onclick="softDel(\''+id+'\',this.dataset.t)">🗑️ Hapus</button></div><div class="card"><dl class="dt"><dt>ID</dt><dd>'+id+'</dd>'
    +Object.keys(LBL).filter(k=>k!=='title'&&k!=='error_code').map(k=>{let v=e[k];if(k==='occurred_at'&&v)v=new Date(v).toLocaleString('id-ID');return v?'<dt>'+LBL[k]+'</dt><dd>'+esc(v)+'</dd>':''}).join('')
-   +'</dl></div>'+(imgs.length?'<div class="card"><h3>Foto Error</h3>'+grpImgs(imgs).map((g,n)=>'<div class="pf"><b>Gambar '+(n+1)+'</b>'+g.map(i=>i.src?'<a href="'+i.src+'" target="_blank"><img src="'+i.src+'" style="margin-bottom:6px"></a>':'<span class="mu">Foto tidak dapat diakses</span>').join('')+'<div class="sn">'+esc(g[0].caption||'Tidak ada keterangan')+'</div></div>').join('')+'</div>':'')
+   +'</dl></div>'+(imgs.length?'<div class="card"><h3>Foto Error</h3>'+grpImgs(imgs).map((g,n)=>'<div class="pf"><b>Step '+(n+1)+'</b>'+g.map(i=>i.src?'<a href="'+i.src+'" target="_blank"><img src="'+i.src+'" style="margin-bottom:6px"></a>':'<span class="mu">Foto tidak dapat diakses</span>').join('')+'<div class="sn">'+esc(g[0].caption||'Tidak ada keterangan')+'</div></div>').join('')+'</div>':'')
    +(lks.length?'<div class="card"><h3>Link Referensi</h3>'+lks.map(l=>'<p><a href="'+esc(l.url)+'" target="_blank" rel="noopener">'+esc(l.title||l.url)+'</a><br><span class="mu">'+esc(l.caption||'')+'</span></p>').join('')+'</div>':'');
   }catch(x){v.innerHTML='<div class="empty" style="color:var(--red)">Gagal memuat: '+esc(x.message)+'</div>'}}
 
@@ -502,7 +513,7 @@ async function mkPdf(e,imgs,lks,idTxt){const{jsPDF}=window.jspdf;const d=new jsP
   const LDm=new Map(imgs.map((im,i)=>[im,LD[i]]));let gn=0;
   for(const grp of grpImgs(imgs)){gn++;let first=true;
     for(const im of grp){try{const L=LDm.get(im);if(!L)throw 0;let w=CW,h=w*L.h/L.w;if(h>95){h=95;w=h*L.w/L.h}brk(h+(first?24:8));
-      if(first){d.setFont('helvetica','bold');d.setFontSize(10);d.setTextColor(20);d.text('Gambar '+gn+(grp.length>1?' ('+grp.length+' foto)':''),M,y);y+=4.5;first=false}
+      if(first){d.setFont('helvetica','bold');d.setFontSize(12);d.setTextColor(20);d.text('Step '+gn+(grp.length>1?' ('+grp.length+' foto)':''),M,y);y+=4.5;first=false}
       d.addImage(L.d,L.t,M,y,w,h,undefined,'FAST');y+=h+4}catch(x){fail.push(im.title||'foto')}}
     para(grp[0].caption||'Tidak ada keterangan',{size:10,st:'italic',lh:4.5});y+=4}
   head('Link Referensi',5.5);
